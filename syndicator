@@ -1,0 +1,6 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use App::Syndicator;
+
+App::Syndicator->new_with_options->run;
