@@ -60,7 +60,7 @@ If you have a web site set up for your module, mention it here.
 
 =head1 AUTHOR
 
-Rob Edwards, E<lt>rob@net-a-porter.comE<gt>
+Rob Edwards, E<lt>robin.ge@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
