@@ -1,6 +1,6 @@
 {
     "feed": ["http://rss.slashdot.org/Slashdot/slashdot",
-        "http://www.theregister.co.uk/Design/page/feeds.html" 
+    "http://www.theregister.co.uk/software/headlines.atom" 
             ]
 }
 

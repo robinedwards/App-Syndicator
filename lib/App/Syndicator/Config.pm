@@ -14,7 +14,7 @@ role App::Syndicator::Config with MooseX::ConfigFromFile {
             return $cfg->[0]->{config};
         }
         catch {
-            die "couldn't load config from $file: $_";
+            die "Couldn't load config from $file: $_";
         };
     }
 }
