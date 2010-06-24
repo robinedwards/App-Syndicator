@@ -3,18 +3,60 @@ use MooseX::Declare;
 
 our $VERSION = '0.01';
 
-class App::Syndicator with (MooseX::Getopt::Dashes, App::Syndicator::Config) {
+class App::Syndicator with (App::Syndicator::Config, MooseX::Getopt::Dashes) {
+    use URI;
+    use XML::Feed;
+    use MooseX::Types -declare=>[qw/UriArray/];
+    use MooseX::Types::URI 'Uri';
+    use MooseX::Types::Moose qw/ArrayRef Str Object/;
     use Data::Dumper;
+    
+    subtype UriArray,
+        as ArrayRef[Uri];
+
+    coerce UriArray, from ArrayRef[Str],
+    via sub {
+        my @uri = map { URI->new($_) } @{$_[0]};
+        return \@uri;
+    };
 
     has +configfile => (
         is => 'ro',
         required => 1,
         isa => 'Str',
-        default => sub { "$ENV{HOME}/.syndicator"},
+        default => sub {"config"},
+    );
+
+    has feed => (
+        is => 'ro',
+        isa => UriArray,
+        traits => ['Array'],
+        coerce => 1
+    );
+
+    has cache => (
+        is => 'ro',
+        isa => 'HashRef',
+        traits => ['Hash'],
+        default => sub { {} },
     );
 
     method run {
-        warn Data::Dumper $self;
+        $self->fetch;
+    }
+
+    method fetch {
+        for my $uri ( @{$self->feed} ) {
+            my $feed = XML::Feed->parse($uri);
+            next unless defined $feed;
+            
+            for my $entry ($feed->entries ) {
+                push @{$self->cache->{$feed->title}}, {
+                        title=>$entry->title,
+                        content=>$entry->content,
+                    }
+            }
+        }
     }
 }
 
