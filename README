@@ -1,7 +1,11 @@
 App-Syndicator version 0.01
 ===========================
 
-UNDER DEVELOPMENT
+A console feed reader, currently under development.
+
+USAGE 
+
+syndicator | less -r
 
 INSTALLATION
 
@@ -12,12 +16,6 @@ To install this module type the following:
    make test
    make install
 
-DEPENDENCIES
-
-This module requires these other modules and libraries:
-
-  blah blah blah
-
 COPYRIGHT AND LICENCE
 
 Put the correct copyright and licence information here.
@@ -25,7 +23,7 @@ Put the correct copyright and licence information here.
 Copyright (C) 2010 by Rob Edwards
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.8 or,
+it under the same terms as Perl itself, either Perl version 5.12.1 or,
 at your option, any later version of Perl 5 you may have available.
 
 
