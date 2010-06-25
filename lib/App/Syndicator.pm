@@ -10,6 +10,7 @@ class App::Syndicator with (App::Syndicator::Config,
 
     use XML::Feed;
     use MooseX::Types::URI 'Uri';
+    use MooseX::Types::DateTime 'DateTime';
     use MooseX::Types -declare=>[qw/UriArray/];
     use MooseX::Types::Moose qw/ArrayRef Str/;
     
@@ -48,27 +49,21 @@ class App::Syndicator with (App::Syndicator::Config,
         default => sub { {} },
         handles => {
             get_feed => 'get',
-            set_feed => 'set',
             list_feeds => 'keys',
         }
     );
 
     method run {
-        $self->d_say("Loading content");
-        $| = 1;
-        my $e = 0; 
-        $e += $self->fetch($_) for ($self->feed_uri);
-        $self->d_say("($e) done.");
-
+        $self->load_feeds;
         $self->show_feeds;
     }
 
     method show_feeds {
-        for my $title ($self->list_feeds) {
+        for my $feed (map { $self->get_feed($_) } $self->feed_uri) {
             $self->d_hr;
-            $self->d_feed_title($title);
+            $self->d_feed_title($feed->{title});
 
-            for my $feed (@{$self->get_feed($title)}) {
+            for my $feed (@{$feed->{entries}}) {
                 $self->d_hr;
                 $self->d_title("$feed->{title} - $feed->{date}");
                 $self->d_link($feed->{link});
@@ -77,31 +72,50 @@ class App::Syndicator with (App::Syndicator::Config,
         }
     }
 
-    method fetch (Uri $uri) {
-        my $feed = XML::Feed->parse($uri);
-        
-        unless (defined $feed) {
-            $self->d_error("\n".$uri->as_string." failed.");
-            return 0;
+    method load_feeds {
+        $self->d_say("Loading content");
+        $| = 1;
+
+        for ($self->feed_uri) {
+            my ($title, $entries) = $self->fetch_feed($_);
+            next unless $title;
+
+            $self->cache->{$_->as_string}{title} = $title;
+            push @{$self->cache->{$_->as_string}{entries}}, @$entries;
         }
 
-        my @entries = map { 
-            print '.'; 
+        $self->d_say("done.");
+    }
+
+    method fetch_feed (Uri $uri, DateTime $last?) {
+        my $feed = XML::Feed->parse($uri);
+        
+        unless ($feed) {
+            $self->d_error("\n".$uri->as_string." failed.");
+            return;
+        }
+
+        my @entries;
+        
+        for ($feed->entries)  { 
+            print "."; 
+
             my $dt = $_->issued || $_->modified;
-            {
+            last if ($last and $last->compare($dt) >= 0);
+
+            push @entries, {
                 title => $self->to_ascii($_->title),
-                content => $self->to_ascii($_->content->body || $_->summary->body),
+                content => $self->to_ascii($_->content->body 
+                    || $_->summary->body),
                 link => $_->link,
                 issued => $dt,
                 date => $dt ?  
                     $dt->ymd('-')." ".$dt->ymd(':')
                     : '???',
             };
-        } $feed->entries;
+        }
 
-
-        $self->set_feed($self->to_ascii($feed->title), \@entries);
-        return scalar(@entries);
+        return ($feed->title, \@entries);
     }
 
 }
