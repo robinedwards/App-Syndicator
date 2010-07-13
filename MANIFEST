@@ -1,9 +1,11 @@
 Changes
+config
+lib/App/Syndicator.pm
+lib/App/Syndicator/Config.pm
+lib/App/Syndicator/Store.pm
+lib/App/Syndicator/View/Console.pm
 Makefile.PL
 MANIFEST
 README
+syndicator
 t/App-Syndicator.t
-lib/App/Syndicator.pm
-lib/App/Syndicator/View/Console.pm
-lib/App/Syndicator/Config.pm
-lib/App/Syndicator/Store.pm
