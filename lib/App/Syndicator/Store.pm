@@ -28,7 +28,7 @@ class App::Syndicator::Store {
     has master => (
         is => 'rw',
         isa => 'XML::Feed::Aggregator',
-        handles => [qw|entries|]
+        handles => [qw|entries since feed|]
     );
 
     has last_read => (
@@ -40,12 +40,11 @@ class App::Syndicator::Store {
         $self->refresh;
     }
 
-    # refresh feed
     method refresh {
         my $agg = XML::Feed::Aggregator->new({uri=>$self->sources});
         $agg->sort;
         $self->master($agg);
-        $self->last_read(DateTime->now);
+        $self->last_read($self->entries->[0]->issued);
     }
 
     method latest {

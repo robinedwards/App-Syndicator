@@ -1,4 +1,3 @@
-package App::Syndicator;
 use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
@@ -27,7 +26,7 @@ class App::Syndicator with (App::Syndicator::Config,
         is => 'rw',
         isa => 'App::Syndicator::Store',
         required =>0,
-        handles => [qw/latest entries/]
+        handles => [qw/latest entries since/]
     );
 
     has view => (
@@ -45,7 +44,7 @@ class App::Syndicator with (App::Syndicator::Config,
     }
 
     method run {
-        $self->view->display($self->entries);
+        $self->view->display($self->store->feed->entries);
     }
 }
 

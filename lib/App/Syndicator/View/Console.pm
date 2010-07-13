@@ -14,11 +14,15 @@ class App::Syndicator::View::Console {
     }
 
     method entry ($entry) {
-        die Dumper $entry;
         $self->hr;
-        $self->title($entry->title);
+
+        my $date = $entry->issued || $entry->modified;
+
+        $self->title($date->dmy('-').' '.$date->hms(':')
+            .' | '.$entry->title);
+
         $self->hr;
-        $self->write($entry->content);
+        $self->write($entry->content->body || $entry->summary->body);
     }
 
     method error (@arg) {    
@@ -45,14 +49,19 @@ class App::Syndicator::View::Console {
     sub ascii {
         my $tree = HTML::TreeBuilder->new_from_content(@_);
         
-        my $formatter = HTML::FormatText->new(leftmargin => 0, rightmargin => 80);
+        my $formatter = HTML::FormatText->new(
+            leftmargin => 0, rightmargin => 80);
         my $text = $formatter->format($tree);
 
+        return filter($text);
+    }
+
+    sub filter {
+        my $text = shift;
         $text =~ s/\[IMAGE\]//g;
         $text =~ s/^(\s+)\S//g;
         $text =~ s/(\s+)$//g;
         chomp($text);
-
         return $text;
     }
 }
