@@ -1,123 +1,52 @@
 package App::Syndicator;
 use MooseX::Declare;
 
-our $VERSION = '0.01';
-
-class App::Syndicator with (App::Syndicator::Config,
-    App::Syndicator::TextFilter, 
-    App::Syndicator::TextDraw, 
+class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
+    use App::Syndicator::Store;
+    use App::Syndicator::View::Console;
+    use MooseX::Types::Moose qw/Str Object ArrayRef/;
 
-    use XML::Feed;
-    use MooseX::Types::URI 'Uri';
-    use MooseX::Types::DateTime 'DateTime';
-    use MooseX::Types -declare=>[qw/UriArray/];
-    use MooseX::Types::Moose qw/ArrayRef Str/;
+    our $VERSION = '0.01';
     
-    subtype UriArray,
-        as ArrayRef[Uri];
-
-    coerce UriArray, from ArrayRef[Str],
-    via sub {
-        my @uri = map { Uri->coerce($_) } @{$_[0]};
-        return \@uri;
-    };
-
     has +configfile => (
         is => 'ro',
         required => 1,
-        isa => 'Str',
+        isa => Str,
         default => sub {"config"},
     );
 
+    has sources => (
+        is => 'rw',
+        required => 1,
+        isa => ArrayRef[Str],
+    );
+
     # list of rss / atom feeds uri
-    has feed => (
-        is => 'ro',
-        isa => UriArray,
-        traits => ['Array'],
-        coerce => 1,
-        handles => {
-            feed_uri => 'elements',
+    has store => (
+        is => 'rw',
+        isa => 'App::Syndicator::Store',
+        required =>0,
+        handles => [qw/latest entries/]
+    );
+
+    has view => (
+        is => 'rw',
+        isa => Object,
+        default => sub {
+            App::Syndicator::View::Console->new;
         }
     );
 
-    # store of feed content
-    has cache => (
-        is => 'ro',
-        isa => 'HashRef',
-        traits => ['Hash'],
-        default => sub { {} },
-        handles => {
-            get_feed => 'get',
-            list_feeds => 'keys',
-        }
-    );
+    method BUILD {
+        $self->store(
+            App::Syndicator::Store->new(sources=>$self->sources)
+        );
+    }
 
     method run {
-        $self->load_feeds;
-        $self->show_feeds;
+        $self->view->display($self->entries);
     }
-
-    method show_feeds {
-        for my $feed (map { $self->get_feed($_) } $self->feed_uri) {
-            $self->d_hr;
-            $self->d_feed_title($feed->{title});
-
-            for my $feed (@{$feed->{entries}}) {
-                $self->d_hr;
-                $self->d_title("$feed->{title} - $feed->{date}");
-                $self->d_link($feed->{link});
-                $self->d_say($feed->{content});
-            }
-        }
-    }
-
-    method load_feeds {
-        $self->d_say("Loading content");
-        $| = 1;
-
-        for ($self->feed_uri) {
-            my ($title, $entries) = $self->fetch_feed($_);
-            next unless $title;
-
-            $self->cache->{$_->as_string}{title} = $title;
-            push @{$self->cache->{$_->as_string}{entries}}, @$entries;
-        }
-
-        $self->d_say("done.");
-    }
-
-    method fetch_feed (Uri $uri, DateTime $last?) {
-        my $feed = XML::Feed->parse($uri);
-        
-        unless ($feed) {
-            $self->d_error("\n".$uri->as_string." failed.");
-            return;
-        }
-
-        my @entries;
-        
-        for ($feed->entries)  { 
-            print "."; 
-
-            my $dt = $_->issued || $_->modified;
-            last if ($last and $last->compare($dt) >= 0);
-
-            push @entries, {
-                title => $self->to_ascii($_->title),
-                content => $self->to_ascii($_->content->body 
-                    || $_->summary->body),
-                link => $_->link,
-                issued => $dt,
-                date => $dt ?  
-                    $dt->ymd('-')." ".$dt->ymd(':')
-                    : '???',
-            };
-        }
-
-        return ($feed->title, \@entries);
-    }
-
 }
 
 
@@ -126,19 +55,15 @@ __END__
 
 =head1 NAME
 
-App::Syndicator - Perl application for feed syndicationh
+App::Syndicator - Perl application for feed syndication
 
 =head1 SYNOPSIS
 
  $ syndicator | less -r
 
-=head1 DESCRIPTION
-
-...
-
 =head1 SEE ALSO
 
-...
+XML::Feed XML::Feed::Aggregator
 
 =head1 AUTHOR
 

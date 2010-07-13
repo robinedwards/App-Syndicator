@@ -1,8 +1,7 @@
-package App::Syndicator::Config;
 use MooseX::Declare;
 
 role App::Syndicator::Config with MooseX::ConfigFromFile {
-    use Data::Dumper;
+    use MooseX::Types::Moose 'ClassName';
     use Config::Any;
     use Try::Tiny;
 
