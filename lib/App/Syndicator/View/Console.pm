@@ -5,15 +5,14 @@ sub BEGIN { class_type 'XML::Feed::Entry'; };
 
 class App::Syndicator::View::Console {
     use Term::ANSIColor;
-    use Data::Dumper;
     require HTML::TreeBuilder;
     require HTML::FormatText;
 
     method display (@entries) {
-        $self->entry($_) for (@entries);
+        $self->display_entry($_) for (@entries);
     }
 
-    method entry ($entry) {
+    method display_entry ($entry) {
         $self->hr;
 
         my $date = $entry->issued || $entry->modified;
@@ -22,7 +21,21 @@ class App::Syndicator::View::Console {
             .' | '.$entry->title);
 
         $self->hr;
-        $self->write($entry->content->body || $entry->summary->body);
+
+        my $c = $b = $entry->content->body;
+        my $s = $entry->summary->body;
+
+        if (defined $c) {
+            $b = ( length($c) >= length($s)) ? $c : $s
+                if (defined $s);
+        }
+        else {
+             $b = $s;
+        }
+        
+        $self->write($b);
+
+        $self->link($entry->link);
     }
 
     method error (@arg) {    

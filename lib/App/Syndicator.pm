@@ -4,7 +4,8 @@ class App::Syndicator with (App::Syndicator::Config,
     MooseX::Getopt::Dashes) {
     use App::Syndicator::Store;
     use App::Syndicator::View::Console;
-    use MooseX::Types::Moose qw/Str Object ArrayRef/;
+    use AnyEvent;
+    use MooseX::Types::Moose qw/Str Object ArrayRef Int/;
 
     our $VERSION = '0.01';
     
@@ -34,7 +35,14 @@ class App::Syndicator with (App::Syndicator::Config,
         isa => Object,
         default => sub {
             App::Syndicator::View::Console->new;
-        }
+        },
+        handles => [qw/display/],
+    );
+
+    has fetch_interval => (
+        is => 'rw',
+        isa => Int,
+        default => sub { 30 },
     );
 
     method BUILD {
@@ -44,7 +52,17 @@ class App::Syndicator with (App::Syndicator::Config,
     }
 
     method run {
-        $self->view->display($self->store->feed->entries);
+        # display all
+        $self->display($self->store->feed->entries);
+        $self->loop;
+    }
+
+    method loop {
+        while(1) {
+            $self->display($self->store->get_latest);
+            $self->store->mark_read;
+            sleep $self->fetch_interval;
+        }
     }
 }
 
