@@ -1,20 +1,9 @@
 use MooseX::Declare;
 
 class App::Syndicator::Store {
-    use MooseX::Types -declare=>['UriArray'];
-    use MooseX::Types::Moose qw/ArrayRef Str/;
-    use MooseX::Types::URI 'Uri';
-    use DateTime;
-    
+    use MooseX::Types::Moose qw/ArrayRef/;
+    use App::Syndicator::Types ':all';
     use XML::Feed::Aggregator;
-    
-    subtype UriArray,
-        as ArrayRef[Uri];
-
-    coerce UriArray, from ArrayRef[Str],
-    via sub {
-        [ map { Uri->coerce($_) } @{$_[0]} ];
-    };
 
     # list of rss / atom uris
     has sources => (
@@ -27,13 +16,13 @@ class App::Syndicator::Store {
     # master aggregated feed
     has aggregator => (
         is => 'rw',
-        isa => 'XML::Feed::Aggregator',
-        handles => [qw|entries since feed|]
+        isa => Aggregator_T,
+        handles => [qw|since|]
     );
 
     has last_read => (
         is => 'rw',
-        isa => 'DateTime',
+        isa => DateTime_T,
     );
 
     method BUILD {
@@ -42,25 +31,37 @@ class App::Syndicator::Store {
     }
 
     method refresh {
-        my $agg = XML::Feed::Aggregator->new({uri=>$self->sources});
+        my $agg = XML::Feed::Aggregator->new({sources=>$self->sources});
         $agg->sort('desc');
         $self->aggregator($agg);
     }
 
-    method get_latest {
+    method unread {
         $self->refresh;
         my @entries = $self->aggregator->since($self->last_read);
         $self->mark_read;
         return @entries;
     }
 
+    method _last_entry {
+        return scalar(@{$self->aggregator->entries}) - 1;
+    }
+
     method mark_read {
-    my $last = scalar(@{$self->entries}) - 1;
         $self->last_read(
-            $self->entries->[$last]->issued
+            $self->aggregator->entries->[$self->_last_entry]->issued
             || 
-            $self->entries->[$last]->modified
+            $self->aggregator->entries->[$self->_last_entry]->modified
         );
+    }
+
+    method entries (Int|Undef $to_return?) {
+        if ($to_return) {
+            return splice @{$self->aggregator->entries}, 
+                $self->_last_entry, ($to_return * -1);
+        }
+
+        return @{$self->aggregator->entries};
     }
 }
 

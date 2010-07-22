@@ -1,18 +1,17 @@
 use MooseX::Declare;
 
-use Moose::Util::TypeConstraints;
-sub BEGIN { class_type 'XML::Feed::Entry'; };
-
 class App::Syndicator::View::Console {
     use Term::ANSIColor;
+    use App::Syndicator::Types ':all';
     require HTML::TreeBuilder;
     require HTML::FormatText;
 
     method display (@entries) {
+        exit;
         $self->display_entry($_) for (@entries);
     }
 
-    method display_entry ($entry) {
+    method display_entry (Entry_T $entry) {
         $self->hr;
 
         my $date = $entry->issued || $entry->modified;
@@ -38,26 +37,25 @@ class App::Syndicator::View::Console {
         $self->link($entry->link);
     }
 
-    method error (@arg) {    
+    method error (Str @arg) {    
         print  color('red'), ascii(@arg), color('reset'), "\n";
     }
 
-    method title (@arg) {
+    method title (Str @arg) {
         print  color('bold white'), ascii(@arg), color('reset'), "\n";
     }
 
-    method write (@arg) {
+    method write (Str @arg) {
         print color('white'), ascii(@arg), color('reset'), "\n";
     }
 
-    method link (@arg) {
+    method link (Str @arg) {
         print  color('green'), ascii(@arg), color('reset'), "\n";
     }
     
     method hr {
         print  '-' x 80, "\n";
     }
-
 
     sub ascii {
         my $tree = HTML::TreeBuilder->new_from_content(@_);

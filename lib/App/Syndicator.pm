@@ -4,8 +4,8 @@ class App::Syndicator with (App::Syndicator::Config,
     MooseX::Getopt::Dashes) {
     use App::Syndicator::Store;
     use App::Syndicator::View::Console;
-    use AnyEvent;
-    use MooseX::Types::Moose qw/Str Object ArrayRef Int/;
+    use MooseX::Types::Moose qw/Str Int/;
+    use App::Syndicator::Types ':all';
 
     our $VERSION = '0.01';
     
@@ -19,20 +19,26 @@ class App::Syndicator with (App::Syndicator::Config,
     has sources => (
         is => 'rw',
         required => 1,
-        isa => ArrayRef[Str],
+        isa => UriArray,
+        coerce => 1,
     );
 
     # list of rss / atom feeds uri
     has store => (
         is => 'rw',
         isa => 'App::Syndicator::Store',
-        required =>0,
+        required => 0,
         handles => [qw/latest entries since/]
+    );
+
+    has show_entries => (
+        is => 'rw',
+        isa => Int,
     );
 
     has view => (
         is => 'rw',
-        isa => Object,
+        isa => View_T,
         default => sub {
             App::Syndicator::View::Console->new;
         },
@@ -42,7 +48,7 @@ class App::Syndicator with (App::Syndicator::Config,
     has fetch_interval => (
         is => 'rw',
         isa => Int,
-        default => sub { 30 },
+        default => sub { 300 },
     );
 
     method BUILD {
@@ -52,14 +58,14 @@ class App::Syndicator with (App::Syndicator::Config,
     }
 
     method run {
-        # display all
-        $self->display($self->store->feed->entries);
-        $self->loop;
+        $self->display($self->entries);
+        exit;
+        $self->ticker;
     }
 
-    method loop {
+    method ticker {
         while(1) {
-            $self->display($self->store->get_latest);
+            $self->display($self->store->latest);
             $self->store->mark_read;
             sleep $self->fetch_interval;
         }
@@ -76,7 +82,7 @@ App::Syndicator - Perl application for feed syndication
 
 =head1 SYNOPSIS
 
- $ syndicator | less -r
+ $ syndicator --show-entries 10 | less -r
 
 =head1 SEE ALSO
 

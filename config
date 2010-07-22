@@ -1,6 +1,6 @@
 {
-    "sources": ["http://rss.slashdot.org/Slashdot/slashdot",
-    "http://www.theregister.co.uk/software/headlines.atom" 
-            ]
+    "sources": [
+            "http://rss.slashdot.org/Slashdot/slashdot",
+            "http://www.theregister.co.uk/software/headlines.atom" 
+    ]
 }
-
