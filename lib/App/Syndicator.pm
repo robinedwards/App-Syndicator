@@ -1,3 +1,4 @@
+use Devel::SimpleTrace;
 use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
@@ -28,7 +29,7 @@ class App::Syndicator with (App::Syndicator::Config,
         is => 'rw',
         isa => 'App::Syndicator::Store',
         required => 0,
-        handles => [qw/latest entries since/]
+        handles => [qw/unread entries since/]
     );
 
     has show_entries => (
@@ -42,7 +43,7 @@ class App::Syndicator with (App::Syndicator::Config,
         default => sub {
             App::Syndicator::View::Console->new;
         },
-        handles => [qw/display/],
+        handles => [qw/display display_error/],
     );
 
     has fetch_interval => (
@@ -53,19 +54,19 @@ class App::Syndicator with (App::Syndicator::Config,
 
     method BUILD {
         $self->store(
-            App::Syndicator::Store->new(sources=>$self->sources)
+            App::Syndicator::Store->new(sources => $self->sources)
         );
     }
 
     method run {
         $self->display($self->entries);
-        exit;
+        $self->display_error($self->store->errors);
         $self->ticker;
     }
 
     method ticker {
         while(1) {
-            $self->display($self->store->latest);
+            $self->display($self->store->unread);
             $self->store->mark_read;
             sleep $self->fetch_interval;
         }

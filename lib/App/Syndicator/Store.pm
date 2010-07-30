@@ -17,7 +17,7 @@ class App::Syndicator::Store {
     has aggregator => (
         is => 'rw',
         isa => Aggregator_T,
-        handles => [qw|since|]
+        handles => [qw|since errors|]
     );
 
     has last_read => (
@@ -31,7 +31,7 @@ class App::Syndicator::Store {
     }
 
     method refresh {
-        my $agg = XML::Feed::Aggregator->new({sources=>$self->sources});
+        my $agg = XML::Feed::Aggregator->new({sources => $self->sources});
         $agg->sort('desc');
         $self->aggregator($agg);
     }

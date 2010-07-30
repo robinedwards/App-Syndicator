@@ -3,5 +3,6 @@ use strict;
 use warnings;
 use lib 'lib';
 use App::Syndicator;
+binmode STDOUT, ":utf8";
 
 App::Syndicator->new_with_options->run;

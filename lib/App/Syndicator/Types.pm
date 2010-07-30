@@ -14,12 +14,12 @@ class App::Syndicator::Types {
         where {
             ref($_) =~ /Entry/
                 and
-            $_->can(qw/issued
+            $_->can([qw/issued
                 modified
                 title
                 summary
                 content
-                /);
+                /]);
         },
         message {"expecting Entry object"};
     
