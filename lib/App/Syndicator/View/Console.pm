@@ -6,16 +6,16 @@ class App::Syndicator::View::Console {
     require HTML::TreeBuilder;
     require HTML::FormatText;
 
-    method display (@entries) {
+    method display (Entry_T @entries) {
         $self->display_entry($_) for (@entries);
     }
 
-    method display_error (@error) {
+    method display_error (Str @error) {
         $self->title("The following errors occured");
         $self->error($_) for (@error);
     }
 
-    method display_entry ($entry) {
+    method display_entry (Entry_T $entry) {
         $self->hr;
 
         my $date = $entry->issued || $entry->modified;
@@ -41,8 +41,8 @@ class App::Syndicator::View::Console {
         $self->link($entry->link);
     }
 
-    method error ($arg) {    
-        print  color('red'), ascii(@$arg), color('reset'), "\n";
+    method error (Str @arg) {    
+        print  color('red'), ascii(@arg), color('reset'), "\n";
     }
 
     method title (Str @arg) {
@@ -73,6 +73,7 @@ class App::Syndicator::View::Console {
 
     sub filter {
         my $text = shift;
+        $text =~ s/Read more of this story at Slashdot\.//g;
         $text =~ s/\[IMAGE\]//g;
         $text =~ s/^(\s+)\S//g;
         $text =~ s/(\s+)$//g;

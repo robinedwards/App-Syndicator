@@ -1,40 +1,29 @@
-use Devel::SimpleTrace;
 use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
     use App::Syndicator::Store;
+    use App::Syndicator::Importer;
     use App::Syndicator::View::Console;
-    use MooseX::Types::Moose qw/Str Int/;
+    use MooseX::Types::Moose qw/Bool/;
     use App::Syndicator::Types ':all';
 
-    our $VERSION = '0.01';
-    
-    has +configfile => (
-        is => 'ro',
-        required => 1,
-        isa => Str,
-        default => sub {"config"},
-    );
+    our $VERSION = 0.001;
 
-    has sources => (
-        is => 'rw',
-        required => 1,
-        isa => UriArray,
-        coerce => 1,
-    );
-
-    # list of rss / atom feeds uri
     has store => (
         is => 'rw',
-        isa => 'App::Syndicator::Store',
-        required => 0,
-        handles => [qw/unread entries since/]
+        isa => Store_T,
+        required => 1,
+        default => sub {
+            App::Syndicator::Store->new;
+        },
     );
 
-    has show_entries => (
+    has importer => (
         is => 'rw',
-        isa => Int,
+        isa => Importer_T,
+        lazy_build => 1,
+        required => 1,
     );
 
     has view => (
@@ -46,29 +35,59 @@ class App::Syndicator with (App::Syndicator::Config,
         handles => [qw/display display_error/],
     );
 
+    # parameters
+
+    has show_entries => (
+        is => 'ro',
+        isa => PositiveInt,
+    );
+
+    has tick => (
+        is => 'ro',
+        isa => Bool,
+    );
+
     has fetch_interval => (
         is => 'rw',
-        isa => Int,
+        isa => PositiveInt,
         default => sub { 300 },
     );
 
+    has +configfile => (
+        is => 'ro',
+        required => 1,
+        isa => File,
+        default => sub {"config"},
+    );
+
+    has sources => (
+        is => 'rw',
+        required => 1,
+        isa => UriArray,
+        coerce => 1,
+    );
+
     method BUILD {
-        $self->store(
-            App::Syndicator::Store->new(sources => $self->sources)
+        $self->importer(
+            App::Syndicator::Importer->new(sources => $self->sources)
         );
     }
 
     method run {
-        $self->display($self->entries);
-        $self->display_error($self->store->errors);
-        $self->ticker;
+        $self->display(
+            $self->importer->retrieve
+        );
+
+        $self->display_error($self->importer->errors)
+            if $self->importer->errors;
+
+        $self->ticker if $self->tick;
     }
 
     method ticker {
-        while(1) {
+        while(sleep $self->fetch_interval) {
             $self->display($self->store->unread);
             $self->store->mark_read;
-            sleep $self->fetch_interval;
         }
     }
 }

@@ -1,69 +1,42 @@
 use MooseX::Declare;
 
 class App::Syndicator::Store {
-    use MooseX::Types::Moose qw/ArrayRef/;
-    use App::Syndicator::Types ':all';
+    use MooseX::Storage;
+    use MooseX::MultiMethods;
+    use MooseX::Types::Moose qw/ArrayRef HashRef/;
+    use App::Syndicator::Types qw/Entry_T PositiveInt DateTime_T/;
     use XML::Feed::Aggregator;
 
-    # list of rss / atom uris
-    has sources => (
-        is => 'ro',
-        isa => UriArray,
-        traits => ['Array'],
-        coerce => 1,
-    );
-
-    # master aggregated feed
-    has aggregator => (
-        is => 'rw',
-        isa => Aggregator_T,
-        handles => [qw|since errors|]
-    );
+    with Storage('format' => 'JSON');
 
     has last_read => (
         is => 'rw',
         isa => DateTime_T,
     );
 
-    method BUILD {
-        $self->refresh;
-        $self->mark_read;
-    }
-
-    method refresh {
-        my $agg = XML::Feed::Aggregator->new({sources => $self->sources});
-        $agg->sort('desc');
-        $self->aggregator($agg);
-    }
-
-    method unread {
-        $self->refresh;
-        my @entries = $self->aggregator->since($self->last_read);
-        $self->mark_read;
-        return @entries;
-    }
-
-    method _last_entry {
-        return scalar(@{$self->aggregator->entries}) - 1;
-    }
-
-    method mark_read {
-        $self->last_read(
-            $self->aggregator->entries->[$self->_last_entry]->issued
-            || 
-            $self->aggregator->entries->[$self->_last_entry]->modified
-        );
-    }
-
-    method entries (Int|Undef $to_return?) {
-        if ($to_return) {
-            return splice @{$self->aggregator->entries}, 
-                $self->_last_entry, ($to_return * -1);
+    has entry => (
+        is => 'rw',
+        isa => HashRef,
+        traits => [HashRef],
+        default => sub{ {} },
+        handles => {
+            _remove_entry => 'del',
+            _add_entry => 'set',
+            _all => 'keys'
         }
+    );
 
-        return @{$self->aggregator->entries};
+    method add_entry (Entry_T $entry) {
+        $self->_add_entry($entry->id, $entry);
+    }
+
+    multi method remove_entry (Entry_T $entry) {
+        $self->_remove_entry($entry->id);
+    }
+
+    multi method remove_entry (PositiveInt $id) {
+        $self->_remove_entry($id);
     }
 }
-
 
 1;
