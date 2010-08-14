@@ -3,7 +3,7 @@ use MooseX::Declare;
 class App::Syndicator::Store {
     use MooseX::Storage;
     use MooseX::MultiMethods;
-    use MooseX::Types::Moose qw/ArrayRef HashRef/;
+    use MooseX::Types::Moose qw/HashRef/;
     use App::Syndicator::Types qw/Entry_T PositiveInt DateTime_T/;
     use XML::Feed::Aggregator;
 
