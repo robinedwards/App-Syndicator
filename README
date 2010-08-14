@@ -1,11 +1,20 @@
-App-Syndicator version 0.01
+App-Syndicator version 0.001
 ===========================
 
 A console feed reader, currently under development.
 
-USAGE 
+USAGE
 
-syndicator | less -r
+ syndicator [-?] [long options...]
+        --store                
+        --importer             
+        --view                 
+        --show-entries         
+        --tick                 
+        --fetch-interval       
+        --configfile           
+        --sources              
+        -? --usage --help     Prints this usage information.
 
 INSTALLATION
 
