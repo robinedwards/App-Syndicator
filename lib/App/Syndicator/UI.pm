@@ -138,9 +138,6 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         $self->display_entry($entry);
     }
 
-    method help {
-        $self->viewer_text($HELP_MESSAGE);
-    }
 
     method display_entry (Entry_T $entry?) {
         return unless $entry;
@@ -155,7 +152,13 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         my $title = $date->dmy('-').' '.$date->hms(':')
             .' - '.$entry->title;
 
+        $title =~ s/\n//g;
+
         $self->viewer_text("\n$title\n\n$body\n\n".$entry->link);
+    }
+
+    method help {
+        $self->viewer_text($HELP_MESSAGE);
     }
 
     method status_text (Str $text?) {
