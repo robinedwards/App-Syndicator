@@ -18,6 +18,7 @@ WriteMakefile(
         XML::Feed::Aggregator => 0,
         HTML::FormatText => 0,
         Term::ANSIColor => 0,
+        Curses::UI => 0,
     },
     ($] >= 5.005 ?   
       (ABSTRACT_FROM  => 'lib/App/Syndicator.pm',
