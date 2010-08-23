@@ -1,10 +1,20 @@
 use MooseX::Declare;
 
 class App::Syndicator::View::Console {
-    use Term::ANSIColor;
     use App::Syndicator::Types ':all';
+    use Term::ANSIColor;
     require HTML::TreeBuilder;
     require HTML::FormatText;
+
+    method BUILD {
+        $self->window (
+            $self->curses->add(
+                'win1', 'Window',
+                -border => 1,
+                -bfg  => 'red',
+            )
+        );
+    }
 
     method display (Entry_T @entries) {
         $self->display_entry($_) for (@entries);

@@ -4,8 +4,9 @@ class App::Syndicator::Types {
     use Moose::Util::TypeConstraints;
     use MooseX::Types::Moose qw/Object ArrayRef Str Int Bool/;
     use MooseX::Types -declare=> [qw(
-        Entry_T DateTime_T UriArray View_T Aggregator_T
-        Store_T Importer_T PositiveInt File
+        Entry_T DateTime_T UriArray Window_T Aggregator_T
+        Store_T Importer_T PositiveInt File TextViewer_T
+        Curses_T
     )];
     use MooseX::Types::URI 'Uri';
     use MooseX::Types::DateTime 'DateTime';
@@ -32,20 +33,17 @@ class App::Syndicator::Types {
         as Str,
         where { -f $_ },
         message {"$_ is not a file" };
-    
-    subtype View_T,
-        as Object,
-        where {
-            $_->can('display');
-        };
 
     subtype PositiveInt,
         as Int,
         where { 
-            $_ > 0;
+            $_ > -1;
         };
 
     class_type Aggregator_T, { class => 'XML::Feed::Aggregator' };
     class_type Store_T, { class => 'App::Syndicator::Store' };
     class_type Importer_T, { class => 'App::Syndicator::Importer' };
+    class_type TextViewer_T, { class => 'Curses::UI::TextViewer' };
+    class_type Window_T, { class => 'Curses::UI::Window' };
+    class_type Curses_T, { class => 'Curses::UI' };
 }

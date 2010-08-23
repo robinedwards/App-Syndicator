@@ -4,7 +4,7 @@ class App::Syndicator with (App::Syndicator::Config,
     MooseX::Getopt::Dashes) {
     use App::Syndicator::Store;
     use App::Syndicator::Importer;
-    use App::Syndicator::View::Console;
+    use App::Syndicator::UI;
     use MooseX::Types::Moose qw/Bool/;
     use App::Syndicator::Types ':all';
 
@@ -26,25 +26,9 @@ class App::Syndicator with (App::Syndicator::Config,
         required => 1,
     );
 
-    has view => (
-        is => 'rw',
-        isa => View_T,
-        default => sub {
-            App::Syndicator::View::Console->new;
-        },
-        handles => [qw/display display_error/],
-    );
-
-    # parameters
-
-    has show_entries => (
+    has ui => (
         is => 'ro',
-        isa => PositiveInt,
-    );
-
-    has tick => (
-        is => 'ro',
-        isa => Bool,
+        isa => 'Object',
     );
 
     has fetch_interval => (
@@ -74,21 +58,12 @@ class App::Syndicator with (App::Syndicator::Config,
     }
 
     method run {
-        $self->display(
-            $self->importer->retrieve
+        my $ui = App::Syndicator::UI->new(
+            entries => [$self->importer->retrieve]
         );
 
-        $self->display_error($self->importer->errors)
-            if $self->importer->errors;
-
-        $self->ticker if $self->tick;
-    }
-
-    method ticker {
-        while(sleep $self->fetch_interval) {
-            $self->display($self->store->unread);
-            $self->store->mark_read;
-        }
+        $ui->mainloop;
+        # $self->display_error($self->importer->errors)
     }
 }
 
@@ -102,11 +77,11 @@ App::Syndicator - Perl application for feed syndication
 
 =head1 SYNOPSIS
 
- $ syndicator --show-entries 10 | less -r
+ $ syndicator --output=raw --entries
 
 =head1 SEE ALSO
 
-XML::Feed XML::Feed::Aggregator
+XML::Feed::Aggregator
 
 =head1 AUTHOR
 
