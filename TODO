@@ -1,20 +1,20 @@
 TODO / IDEAS
 
 1. persitance 
+ - kiokudb
  - store / remove entry
  - use class::mop to add attr to entries
  - mark entries as read
  - create various indexes date order / tag
  - tag entry
 
-2. alternate views
- - curses style ui?
+2. alternate outputs
  - atom + rss
  - html + mobile html
 
 3. update configuration
- - select view
- - provide params to view
+ - select output
+ - provide params to output
 
 4. notification plugins
  - growl

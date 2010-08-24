@@ -19,6 +19,7 @@ WriteMakefile(
         Term::ANSIColor => 0,
         Curses::UI => 0,
         XML::Feed::Aggregator => 0.03,
+        Perl6::Junction => 0,
     },
     ($] >= 5.005 ?   
       (ABSTRACT_FROM  => 'lib/App/Syndicator.pm',
