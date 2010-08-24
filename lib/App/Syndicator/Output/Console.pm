@@ -1,6 +1,6 @@
 use MooseX::Declare;
 
-class App::Syndicator::View::Console with App::Syndicator::HtmlToAscii {
+class App::Syndicator::Output::Console with App::Syndicator::HtmlToAscii {
     use App::Syndicator::Types ':all';
     use MooseX::Types::Moose qw/ArrayRef Str/;
     use Term::ANSIColor;
@@ -25,9 +25,9 @@ class App::Syndicator::View::Console with App::Syndicator::HtmlToAscii {
     );
 
     method run {
-        $self->_display_entry($_) for ($self->entries);
+        $self->_display_entry($_) for (@{$self->entries});
 
-        $self->_error($_) for ($self->errors);
+        $self->_error($_) for (@{$self->errors});
     }
 
     method _display_entry (Entry_T $entry) {
@@ -51,13 +51,14 @@ class App::Syndicator::View::Console with App::Syndicator::HtmlToAscii {
              $b = $s;
         }
         
-        $self->_write($b);
+        $self->_body($b);
 
         $self->_link($entry->link);
     }
 
     method _colour (Str $colour) {
-        color ($colour) if $self->colour;
+        return color ($colour) if $self->colour;
+        return '';
     }
 
     method _error (Str @arg) {    
@@ -72,17 +73,17 @@ class App::Syndicator::View::Console with App::Syndicator::HtmlToAscii {
             . $self->_colour('reset') . "\n";
     }
 
-    method _write (Str @arg) {
+    method _body (Str @arg) {
         print $self->_colour('white')
             . $self->html_to_ascii(@arg)
-            . $self->_colour('reset') . "\n";
+            . $self->_colour('reset') . "\n\n";
     }
 
     method _link (Str @arg) {
         print  $self->_colour('green')
             . $self->html_to_ascii(@arg)
             . $self->_colour('reset')
-            . "\n";
+            . "\n\n";
     }
     
     method _hr {
