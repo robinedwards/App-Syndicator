@@ -1,39 +1,44 @@
 use MooseX::Declare;
 
-class App::Syndicator::View::Console {
+class App::Syndicator::View::Console with App::Syndicator::HtmlToAscii {
     use App::Syndicator::Types ':all';
+    use MooseX::Types::Moose qw/ArrayRef Str/;
     use Term::ANSIColor;
-    require HTML::TreeBuilder;
-    require HTML::FormatText;
 
-    method BUILD {
-        $self->window (
-            $self->curses->add(
-                'win1', 'Window',
-                -border => 1,
-                -bfg  => 'red',
-            )
-        );
+    has entries => (
+        is => 'ro',
+        isa => ArrayRef[Entry_T],
+        required => 1,
+    );
+
+    has errors => (
+        is => 'ro',
+        isa => ArrayRef[Str],
+        default => sub { [] }
+    );
+
+    has colour => (
+        is => 'ro',
+        isa => 'Bool',
+        required => 1,
+        default => 0,
+    );
+
+    method run {
+        $self->_display_entry($_) for ($self->entries);
+
+        $self->_error($_) for ($self->errors);
     }
 
-    method display (Entry_T @entries) {
-        $self->display_entry($_) for (@entries);
-    }
-
-    method display_error (Str @error) {
-        $self->title("The following errors occured");
-        $self->error($_) for (@error);
-    }
-
-    method display_entry (Entry_T $entry) {
-        $self->hr;
+    method _display_entry (Entry_T $entry) {
+        $self->_hr;
 
         my $date = $entry->issued || $entry->modified;
 
-        $self->title($date->dmy('-').' '.$date->hms(':')
+        $self->_title($date->dmy('-').' '.$date->hms(':')
             .' | '.$entry->title);
 
-        $self->hr;
+        $self->_hr;
 
         my $c = $b = $entry->content->body;
         my $s = $entry->summary->body;
@@ -46,49 +51,42 @@ class App::Syndicator::View::Console {
              $b = $s;
         }
         
-        $self->write($b);
+        $self->_write($b);
 
-        $self->link($entry->link);
+        $self->_link($entry->link);
     }
 
-    method error (Str @arg) {    
-        print  color('red'), ascii(@arg), color('reset'), "\n";
+    method _colour (Str $colour) {
+        color ($colour) if $self->colour;
     }
 
-    method title (Str @arg) {
-        print  color('bold white'), ascii(@arg), color('reset'), "\n";
+    method _error (Str @arg) {    
+        print STDERR $self->_colour('red')
+            . $self->html_to_ascii(@arg)
+            . $self->_colour('reset') . "\n";
     }
 
-    method write (Str @arg) {
-        print color('white'), ascii(@arg), color('reset'), "\n";
+    method _title (Str @arg) {
+        print  $self->_colour('bold white')
+            . $self->html_to_ascii(@arg)
+            . $self->_colour('reset') . "\n";
     }
 
-    method link (Str @arg) {
-        print  color('green'), ascii(@arg), color('reset'), "\n";
+    method _write (Str @arg) {
+        print $self->_colour('white')
+            . $self->html_to_ascii(@arg)
+            . $self->_colour('reset') . "\n";
+    }
+
+    method _link (Str @arg) {
+        print  $self->_colour('green')
+            . $self->html_to_ascii(@arg)
+            . $self->_colour('reset')
+            . "\n";
     }
     
-    method hr {
+    method _hr {
         print  '-' x 80, "\n";
-    }
-
-    sub ascii {
-        my $tree = HTML::TreeBuilder->new_from_content(@_);
-        
-        my $formatter = HTML::FormatText->new(
-            leftmargin => 0, rightmargin => 80);
-        my $text = $formatter->format($tree);
-
-        return filter($text);
-    }
-
-    sub filter {
-        my $text = shift;
-        $text =~ s/Read more of this story at Slashdot\.//g;
-        $text =~ s/\[IMAGE\]//g;
-        $text =~ s/^(\s+)\S//g;
-        $text =~ s/(\s+)$//g;
-        chomp($text);
-        return $text;
     }
 }
 

@@ -11,7 +11,7 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         required => 1, 
         default =>  sub { 
             Curses::UI->new(
-                -color_support => 1
+                -color_support => 1,
                 -clear_on_exit => 1
             ) 
         }, 

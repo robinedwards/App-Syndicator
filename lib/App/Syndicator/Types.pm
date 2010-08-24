@@ -3,11 +3,12 @@ use MooseX::Declare;
 class App::Syndicator::Types {
     use Moose::Util::TypeConstraints;
     use MooseX::Types::Moose qw/Object ArrayRef Str Int Bool/;
-    use MooseX::Types -declare=> [qw(
+    use MooseX::Types -declare=> [qw/
         Entry_T DateTime_T UriArray Window_T Aggregator_T
         Store_T Importer_T PositiveInt File TextViewer_T
-        Curses_T
-    )];
+        Curses_T Output_T
+    /];
+    use Perl6::Junction 'any';
     use MooseX::Types::URI 'Uri';
     use MooseX::Types::DateTime 'DateTime';
 
@@ -33,6 +34,11 @@ class App::Syndicator::Types {
         as Str,
         where { -f $_ },
         message {"$_ is not a file" };
+
+    subtype Output_T,
+        as Str,
+        where { $_ eq any(qw/curses console/) },
+        message { "Invalid output type" };
 
     subtype PositiveInt,
         as Int,

@@ -2,22 +2,11 @@ use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
-    use App::Syndicator::Store;
     use App::Syndicator::Importer;
-    use App::Syndicator::UI;
     use MooseX::Types::Moose qw/Bool/;
     use App::Syndicator::Types ':all';
 
     our $VERSION = 0.001;
-
-    has store => (
-        is => 'rw',
-        isa => Store_T,
-        required => 1,
-        default => sub {
-            App::Syndicator::Store->new;
-        },
-    );
 
     has importer => (
         is => 'rw',
@@ -26,22 +15,18 @@ class App::Syndicator with (App::Syndicator::Config,
         required => 1,
     );
 
-    has ui => (
+    has output => (
         is => 'ro',
-        isa => 'Object',
-    );
-
-    has fetch_interval => (
-        is => 'rw',
-        isa => PositiveInt,
-        default => sub { 300 },
+        isa => Output_T,
+        required => 1,
+        default => 'curses',
     );
 
     has +configfile => (
         is => 'ro',
         required => 1,
         isa => File,
-        default => sub {"config"},
+        default => "config",
     );
 
     has sources => (
@@ -57,13 +42,34 @@ class App::Syndicator with (App::Syndicator::Config,
         );
     }
 
-    method run {
+    method run { 
+        my $output = $self->output;
+
+        $self->can($output) 
+            ? $self->$output
+            : die "Unknown output type: $output";
+    }
+
+    method curses {
+        require App::Syndicator::UI;
+
         my $ui = App::Syndicator::UI->new(
-            entries => [$self->importer->retrieve]
+            entries => [$self->importer->retrieve],
+            errors => [$self->importer->errors]
         );
 
         $ui->mainloop;
-        # $self->display_error($self->importer->errors)
+    }
+
+    method console {
+        require App::Syndicator::Output::Console;
+
+        my $console = App::Syndicator::Output::Console->new(
+            entries => [$self->importer->retrieve],
+            errors => [$self->importer->errors]
+        );
+        
+        $console->run;
     }
 }
 
@@ -77,7 +83,7 @@ App::Syndicator - Perl application for feed syndication
 
 =head1 SYNOPSIS
 
- $ syndicator --output=raw --entries
+ $ syndicator [--output=console] [--config=/your/config.any]
 
 =head1 SEE ALSO
 
