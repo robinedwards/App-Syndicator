@@ -31,7 +31,7 @@ class App::Syndicator::Importer {
                 sources => $self->sources
             })
         );
-        $self->aggregator->sort;
+        $self->aggregator->sort('desc');
         $self->aggregator->deduplicate;
     }
 
