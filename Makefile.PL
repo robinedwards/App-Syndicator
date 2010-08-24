@@ -15,10 +15,10 @@ WriteMakefile(
         MooseX::Storage => 0,
         Config::Any => 0,
         JSON::Any => 0,
-        XML::Feed::Aggregator => 0,
         HTML::FormatText => 0,
         Term::ANSIColor => 0,
         Curses::UI => 0,
+        XML::Feed::Aggregator => 0.03,
     },
     ($] >= 5.005 ?   
       (ABSTRACT_FROM  => 'lib/App/Syndicator.pm',
