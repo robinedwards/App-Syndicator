@@ -86,7 +86,17 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         }
     );
 
-    method BUILD {
+    method _build_main_window {
+        my $mainwin = $self->curses->add(
+            'main', 'Window',
+            -y => 1,
+            -border => 0,
+        );
+
+        $self->main_window($mainwin);
+    }
+
+    method _build_status_window {
         my $statuswin = $self->curses->add(
             'status', 'Window',
             -y => 0,
@@ -95,32 +105,27 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
             -fg => 'white',
         );
 
-        my $mainwin = $self->curses->add(
-            'main', 'Window',
-            -y => 1,
-            -border => 0,
-        );
-
-        $self->main_window($mainwin);
         $self->status_window($statuswin);
+    }
 
+    method BUILD {
         my $textview = $self->main_window->add(
             'reader', 'TextViewer',
         );
 
+        $self->viewer($textview);
+
         my $statusbar = $self->status_window->add(
             'reader', 'TextViewer',
         );
-
-        $self->viewer($textview);
-        $self->viewer->focus;
         $self->status_bar($statusbar);
-        $self->bind_keys;
+
+        $self->_bind_keys;
 
         $self->home;
     }
 
-    method bind_keys {
+    method _bind_keys {
         $self->set_binding( sub { exit }, 'q');
         $self->set_binding( sub { $self->next_entry }, 'n');
         $self->set_binding( sub { $self->previous_entry }, 'p');
@@ -155,10 +160,10 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         $self->status_text('Fetching entries..');
         $self->status_bar->focus;
 
-        $self->schedule_event(sub { $self->fetch_new_entries } );
+        $self->schedule_event(sub { $self->_fetch_new_entries } );
     }
 
-    method fetch_new_entries {
+    method _fetch_new_entries {
         my $importer;
 
         try {
