@@ -2,18 +2,10 @@ use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
-    use App::Syndicator::Importer;
     use MooseX::Types::Moose qw/Bool/;
     use App::Syndicator::Types ':all';
 
     our $VERSION = 0.001;
-
-    has importer => (
-        is => 'rw',
-        isa => Importer_T,
-        lazy_build => 1,
-        required => 1,
-    );
 
     has output => (
         is => 'ro',
@@ -36,12 +28,6 @@ class App::Syndicator with (App::Syndicator::Config,
         coerce => 1,
     );
 
-    method BUILD {
-        $self->importer(
-            App::Syndicator::Importer->new(sources => $self->sources)
-        );
-    }
-
     method run { 
         my $output = $self->output;
 
@@ -54,8 +40,7 @@ class App::Syndicator with (App::Syndicator::Config,
         require App::Syndicator::UI;
 
         my $ui = App::Syndicator::UI->new(
-            entries => [$self->importer->retrieve],
-            errors => [$self->importer->errors]
+            sources => $self->sources
         );
 
         $ui->mainloop;
@@ -63,10 +48,15 @@ class App::Syndicator with (App::Syndicator::Config,
 
     method console {
         require App::Syndicator::Output::Console;
+        require App::Syndicator::Importer;
+
+        my $importer = App::Syndicator::Importer->new(
+            sources => $self->sources
+        );
 
         my $console = App::Syndicator::Output::Console->new(
-            entries => [$self->importer->retrieve],
-            errors => [$self->importer->errors]
+            entries => [$importer->retrieve],
+            errors => [$importer->errors]
         );
         
         $console->run;

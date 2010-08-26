@@ -3,8 +3,8 @@ use MooseX::Declare;
 class App::Syndicator::Importer {
     use MooseX::MultiMethods;
     use App::Syndicator::Types qw/
-        UriArray PositiveInt Aggregator_T
-        DateTime_T
+        UriArray PositiveInt
+        Aggregator_T DateTime_T
         /;
     use XML::Feed::Aggregator;
 
@@ -48,6 +48,10 @@ class App::Syndicator::Importer {
 
     multi method retrieve (DateTime_T $since) {
         return $self->aggregator->since($since);
+    }
+
+    method count {
+        return scalar($self->aggregator->entries);
     }
 }
 
