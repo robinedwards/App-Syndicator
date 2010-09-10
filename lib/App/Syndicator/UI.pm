@@ -41,18 +41,10 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         },
     );
 
-    has index => (
+    has entry_dict => (
         is => 'rw',
-        isa => PositiveInt,
-        traits => ['Counter'],
-        default => 0,
-        handles => {
-            inc_index => 'inc',
-            dec_index => 'dec',
-            reset_index => 'reset'
-        },
-        predicate => 'entries',
-        trigger => \&_index_set
+        isa => 'HashRef',
+        default => sub {{}},
     );
 
     has main_window => (
@@ -69,7 +61,28 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         lazy_build => 1
     );
 
+    has header_window => (
+        is => 'rw',
+        isa => Window_T,
+        required => 1,
+        lazy_build => 1
+    );
+
+    has list_window => (
+        is => 'rw',
+        isa => Window_T,
+        required => 1,
+        lazy_build => 1
+    );
+
     has viewer => ( 
+        is => 'rw',
+        isa => TextViewer_T, 
+        required => 1,
+        lazy_build => 1,
+    );
+
+    has header_bar => ( 
         is => 'rw',
         isa => TextViewer_T, 
         required => 1,
@@ -81,23 +94,17 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         isa => TextViewer_T, 
         required => 1,
         lazy_build => 1,
-        handles => {
-            set_status_text => 'text' 
-        }
     );
 
-    method _build_main_window {
-        my $mainwin = $self->curses->add(
-            'main', 'Window',
-            -y => 1,
-            -border => 0,
-        );
-
-        $self->main_window($mainwin);
-    }
+    has list_box => ( 
+        is => 'rw',
+        isa => ListBox_T, 
+        required => 1,
+        lazy_build => 1,
+    );
 
     method _build_status_window {
-        my $statuswin = $self->curses->add(
+        my $status_win = $self->curses->add(
             'status', 'Window',
             -y => 0,
             -height => 1,
@@ -105,62 +112,122 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
             -fg => 'white',
         );
 
-        $self->status_window($statuswin);
+        $self->status_window($status_win);
+    }
+
+    method _build_main_window {
+        my $main_win = $self->curses->add(
+            'main', 'Window',
+            -y => 10,
+            -border => 0,
+        );
+
+        $self->main_window($main_win);
+    }
+
+    method _build_header_window {
+        my $header_win = $self->curses->add(
+            'header', 'Window',
+            -y => 9,
+            -height => 1,
+            -bg => 'blue',
+            -fg => 'white',
+        );
+
+        $self->header_window($header_win);
+    }
+
+    method _build_list_window {
+        my $list_win = $self->curses->add(
+            'list', 'Window',
+            -y => 1,
+            -height => 8,
+            -border => 0,
+        );
+
+        $self->list_window($list_win);
     }
 
     method BUILD {
+        my $status_bar = $self->status_window->add(
+            'status', 'TextViewer',
+        );
+
+        $self->status_bar($status_bar);
+
         my $textview = $self->main_window->add(
             'reader', 'TextViewer',
         );
 
         $self->viewer($textview);
 
-        my $statusbar = $self->status_window->add(
-            'reader', 'TextViewer',
+        my $header_bar = $self->header_window->add(
+            'header', 'TextViewer',
         );
-        $self->status_bar($statusbar);
+
+        $self->header_bar($header_bar);
+
+        my $listbox = $self->list_window->add(
+            'list', 'Listbox',
+            -multi => 1,
+            -values => [1],
+            -labels => {1 => 'No messages'},
+            -onselchange => sub { $self->_list_box_change(@_) } 
+        );
+
+        $self->list_box($listbox);
 
         $self->_bind_keys;
-
         $self->home;
     }
 
     method _bind_keys {
-        $self->set_binding( sub { exit }, 'q');
-        $self->set_binding( sub { $self->next_entry }, 'n');
-        $self->set_binding( sub { $self->previous_entry }, 'p');
-        $self->set_binding( sub { $self->fetch_entries }, 'f');
-        $self->set_binding( sub { $self->list_entries }, 'l');
-        $self->set_binding( sub { $self->home }, 'h');
+        $self->set_binding( sub { exit }, "\cq");
+        $self->set_binding( sub { $self->fetch_entries }, "\cf");
+        $self->set_binding( sub { $self->home }, "\ch");
     }
 
-    method next_entry {
-        unless ($self->entry_count) {
-            $self->status_text("No entries..");
-            return;
-        }
+    method _list_entries (Entry_T @entries) {
+        $self->list_box->values( 
+          [  map { $_->id } @entries ]
+        );
 
-        $self->inc_index;
-        my $entry = $self->get_entry($self->index);
-        $self->display_entry($entry);
+        $self->list_box->labels(
+            { map { $_->id => $_->title } @entries }
+        );
+
+        $self->list_box->focus;
     }
 
-    method previous_entry {
-        unless ($self->entry_count) {
-            $self->status_text("No entries..");
-            return;
-        }
+    method _list_box_change {
+        my $entry_id = $self->list_box->get_active_value;
+        
+        return unless defined $entry_id;
 
-        $self->dec_index if $self->index > 0;
-        my $entry = $self->get_entry($self->index);
-        $self->display_entry($entry);
+        my $entry = ${$self->entry_dict->{$entry_id}};
+
+        die "Couldn't find entry with id: $entry_id"
+            unless $entry;
+
+        $self->_render_entry_header($entry);
+        $self->_render_entry_body($entry);
+        $self->list_box->focus;
     }
 
     method fetch_entries {
         $self->status_text('Fetching entries..');
         $self->status_bar->focus;
-
         $self->schedule_event(sub { $self->_fetch_new_entries } );
+    }
+
+    method home {
+        my $HELP_MESSAGE = "\nWelcome!\n"
+            . "ctrl + q - quit\n"
+            . "ctrl + f - fetch entries\n"
+            . "ctrl + h - help (this screen)\n";
+    
+        $self->status_text('Home');
+        $self->viewer_text($HELP_MESSAGE);
     }
 
     method _fetch_new_entries {
@@ -168,7 +235,7 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
 
         try {
             $importer = App::Syndicator::Importer->new(
-                sources => $self->sources,
+                sources => $self->sources
             );
         }
 
@@ -179,15 +246,20 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
 
         finally {
             $self->new_entries([$importer->retrieve]);
-            $self->viewer_text( "\nFetched "
+            $self->status_text( "Fetched "
                 . $importer->count . " entries from " 
              . $self->source_count . " sources."
             );
-            $self->status_text('Finished.');
         };
+
+        $self->entry_dict({
+            map { $_->id => \$_ } 
+                @{$self->new_entries}
+        });
+        $self->_list_entries(@{$self->new_entries});
     }
 
-    method display_entry (Entry_T $entry?) {
+    method _render_entry_body (Entry_T $entry) {
         return unless $entry;
 
         my $html = $entry->content->body
@@ -195,27 +267,21 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
 
         my $body = $self->html_to_ascii($html);
 
+        $self->viewer_text("$body\n\n".$entry->link);
+    }
+
+    method _render_entry_header (Entry_T $entry) {
         my $date = $entry->issued || $entry->modified;
 
         my $title = $date->dmy('-').' '.$date->hms(':')
-            .' - '.$entry->title;
+            .' - '.$entry->title ;
 
         $title =~ s/\n//g;
 
-        $self->viewer_text("\n$title\n\n$body\n\n".$entry->link);
+        $self->header_bar->text($title);
+        $self->header_bar->focus;
     }
 
-    method home {
-        my $HELP_MESSAGE = "\nWelcome!\n"
-            . "n - next entry\n"
-            . "p - previous entry\n"
-            . "q - quit\n"
-            . "f - fetch entries\n"
-            . "h - help (this screen)\n";
-    
-        $self->status_text('Home');
-        $self->viewer_text($HELP_MESSAGE);
-    }
     
     method viewer_text (Str $text){
         $self->viewer->text($text);
@@ -225,28 +291,13 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
     method status_text (Str $text?) {
         $text =~ s/\n//g;
 
-        $self->set_status_text(
+        $self->status_bar->text(
             "App::Syndicator v"
             . $App::Syndicator::VERSION
             . " - $text"
         );
 
         $self->status_bar->focus;
-    }
-
-    method _index_set (PositiveInt $index, PositiveInt $old_index) {
-        $self->index(0) and return unless $self->entry_count;
-
-        if ($index > $self->entry_count) {
-            $self->index($old_index);
-        }
-
-        $self->status_text(
-            "Viewing item " 
-            . $self->index
-            . "/" . $self->entry_count
-            . "."
-        );
     }
 }
 

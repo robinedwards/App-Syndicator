@@ -6,7 +6,7 @@ class App::Syndicator::Types {
     use MooseX::Types -declare=> [qw/
         Entry_T DateTime_T UriArray Window_T Aggregator_T
         Store_T Importer_T PositiveInt File TextViewer_T
-        Curses_T Output_T
+        Curses_T Output_T ListBox_T
     /];
     use Perl6::Junction 'any';
     use MooseX::Types::URI 'Uri';
@@ -50,6 +50,7 @@ class App::Syndicator::Types {
     class_type Store_T, { class => 'App::Syndicator::Store' };
     class_type Importer_T, { class => 'App::Syndicator::Importer' };
     class_type TextViewer_T, { class => 'Curses::UI::TextViewer' };
+    class_type ListBox_T, { class => 'Curses::UI::Listbox' };
     class_type Window_T, { class => 'Curses::UI::Window' };
     class_type Curses_T, { class => 'Curses::UI' };
 }
