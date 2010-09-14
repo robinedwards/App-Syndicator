@@ -2,17 +2,11 @@ use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
-    use MooseX::Types::Moose qw/Bool/;
-    use App::Syndicator::Types ':all';
+    use App::Syndicator::Types qw/File UriArray/;
+    use App::Syndicator::UI;
+    use App::Syndicator::DB;
 
     our $VERSION = 0.001;
-
-    has output => (
-        is => 'ro',
-        isa => Output_T,
-        required => 1,
-        default => 'curses',
-    );
 
     has +configfile => (
         is => 'ro',
@@ -28,38 +22,17 @@ class App::Syndicator with (App::Syndicator::Config,
         coerce => 1,
     );
 
-    method run { 
-        my $output = $self->output;
+    method run {
+        my $db = App::Syndicator::DB->new(
+            sources => $self->sources,
 
-        $self->can($output) 
-            ? $self->$output
-            : die "Unknown output type: $output";
-    }
-
-    method curses {
-        require App::Syndicator::UI;
+        );
 
         my $ui = App::Syndicator::UI->new(
-            sources => $self->sources
+            db => $db
         );
 
         $ui->mainloop;
-    }
-
-    method console {
-        require App::Syndicator::Output::Console;
-        require App::Syndicator::Importer;
-
-        my $importer = App::Syndicator::Importer->new(
-            sources => $self->sources
-        );
-
-        my $console = App::Syndicator::Output::Console->new(
-            entries => [$importer->retrieve],
-            errors => [$importer->errors]
-        );
-        
-        $console->run;
     }
 }
 
@@ -73,7 +46,7 @@ App::Syndicator - Perl application for feed syndication
 
 =head1 SYNOPSIS
 
- $ syndicator [--output=console] [--config=/your/config.any]
+ $ syndicator [--config=/your/config.any]
 
 =head1 SEE ALSO
 

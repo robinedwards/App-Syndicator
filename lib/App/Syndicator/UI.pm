@@ -1,10 +1,7 @@
 use MooseX::Declare;
 
-class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
+class App::Syndicator::UI  {
     use App::Syndicator::Types ':all';
-    use App::Syndicator::Importer;
-    use MooseX::Types::Moose 'ArrayRef';
-    use Try::Tiny;
     use Curses::UI;
 
     has curses => ( 
@@ -19,32 +16,11 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         }, 
         handles => [qw/set_binding mainloop schedule_event/]
     );
-
-    has sources => (
-        is => 'rw',
-        isa => UriArray,
-        coerce => 1,
-        traits => ['Array'],
-        handles => {
-            source_count => 'count'
-        }
-    );
-
-    has new_entries => (
-        is => 'rw',
-        isa => ArrayRef[Entry_T],
-        traits => ['Array'],
-        default => sub {[]},
-        handles => {
-            get_entry => 'get',
-            entry_count => 'count', 
-        },
-    );
-
-    has entry_dict => (
-        is => 'rw',
-        isa => 'HashRef',
-        default => sub {{}},
+    
+    has db => (
+        is => 'ro',
+        isa => DB_T,
+        required => 1,
     );
 
     has main_window => (
@@ -96,7 +72,7 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
         lazy_build => 1,
     );
 
-    has list_box => ( 
+    has message_list => ( 
         is => 'rw',
         isa => ListBox_T, 
         required => 1,
@@ -172,10 +148,11 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
             -multi => 1,
             -values => [1],
             -labels => {1 => 'No messages'},
-            -onselchange => sub { $self->_list_box_change(@_) } 
+            -onselchange => sub { $self->_message_list_change(@_) } 
         );
 
-        $self->list_box($listbox);
+        $self->message_list($listbox);
+        $self->_list_messages($self->db->all_messages);
 
         $self->_bind_keys;
         $self->home;
@@ -183,103 +160,61 @@ class App::Syndicator::UI with App::Syndicator::HtmlToAscii {
 
     method _bind_keys {
         $self->set_binding( sub { exit }, "\cq");
-        $self->set_binding( sub { $self->fetch_entries }, "\cf");
+        $self->set_binding( sub { $self->fetch_messages }, "\cf");
         $self->set_binding( sub { $self->home }, "\ch");
     }
 
-    method _list_entries (Entry_T @entries) {
-        $self->list_box->values( 
-          [  map { $_->id } @entries ]
+    method _list_messages (Message_T @messages) {
+        $self->message_list->values( 
+          [  map { $_->id } @messages ]
         );
 
-        $self->list_box->labels(
-            { map { $_->id => $_->title } @entries }
+        $self->message_list->labels(
+            { map { $_->id => $_->title } @messages }
         );
 
-        $self->list_box->focus;
+        $self->message_list->focus;
     }
 
-    method _list_box_change {
-        my $entry_id = $self->list_box->get_active_value;
+    method _message_list_change {
+        my $msg_id = $self->message_list->get_active_value;
         
-        return unless defined $entry_id;
+        return unless defined $msg_id;
 
-        my $entry = ${$self->entry_dict->{$entry_id}};
+        my $msg = $self->db->lookup($msg_id);
 
-        die "Couldn't find entry with id: $entry_id"
-            unless $entry;
-
-        $self->_render_entry_header($entry);
-        $self->_render_entry_body($entry);
-        $self->list_box->focus;
+        $self->_render_message($msg);
+        $self->message_list->focus;
     }
 
-    method fetch_entries {
-        $self->status_text('Fetching entries..');
+    method fetch_messages {
+        $self->status_text('Fetching messages..');
         $self->status_bar->focus;
-        $self->schedule_event(sub { $self->_fetch_new_entries } );
+        my $n = $self->db->fetch;
+        $self->status_text("$n new message"
+            .($n>1?'s!':'!'));
+        $self->status_bar->focus;
     }
 
     method home {
-        my $HELP_MESSAGE = "\nWelcome!\n"
+        my $help_txt = "\nWelcome!\n"
             . "ctrl + q - quit\n"
-            . "ctrl + f - fetch entries\n"
+            . "ctrl + f - fetch messages\n"
             . "ctrl + h - help (this screen)\n";
     
         $self->status_text('Home');
-        $self->viewer_text($HELP_MESSAGE);
+        $self->viewer_text($help_txt);
     }
 
-    method _fetch_new_entries {
-        my $importer;
-
-        try {
-            $importer = App::Syndicator::Importer->new(
-                sources => $self->sources
-            );
-        }
-
-        catch {
-            $self->viewer_text("Fetch failed:\n$_");
-            $self->status_text('Error');
-        }
-
-        finally {
-            $self->new_entries([$importer->retrieve]);
-            $self->status_text( "Fetched "
-                . $importer->count . " entries from " 
-             . $self->source_count . " sources."
-            );
-        };
-
-        $self->entry_dict({
-            map { $_->id => \$_ } 
-                @{$self->new_entries}
-        });
-        $self->_list_entries(@{$self->new_entries});
-    }
-
-    method _render_entry_body (Entry_T $entry) {
-        return unless $entry;
-
-        my $html = $entry->content->body
-            || $entry->summary->body;
-
-        my $body = $self->html_to_ascii($html);
-
-        $self->viewer_text("$body\n\n".$entry->link);
-    }
-
-    method _render_entry_header (Entry_T $entry) {
-        my $date = $entry->issued || $entry->modified;
-
-        my $title = $date->dmy('-').' '.$date->hms(':')
-            .' - '.$entry->title ;
-
-        $title =~ s/\n//g;
+    method _render_message (Message_T $msg) {
+        my $title = $msg->published->dmy('-')
+            .' '.$msg->published->hms(':')
+            .' - '.$msg->title ;
 
         $self->header_bar->text($title);
         $self->header_bar->focus;
+
+        $self->viewer_text("$msg->body\n\n".$msg->link);
     }
 
     

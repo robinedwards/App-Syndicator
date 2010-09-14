@@ -1,72 +1,111 @@
 use MooseX::Declare;
 
 class App::Syndicator::Message {
-    use App::Syndicator::Types;
+    use MooseX::Types::Moose 'Str';
+    use MooseX::Types::URI 'Uri';
+    use App::Syndicator::Types ':all';
     use Digest::MD5 'md5_base64';
 
     has title => (
-        is => 'ro',
+        is => 'rw',
         coerce => 1,
         isa => MessageTitle_T,
+        lazy_build => 1,
         required => 1
     );
 
     has body => (
-        is => 'ro',
+        is => 'rw',
         coerce => 1,
         isa => MessageBody_T,
+        lazy_build => 1,
         required => 1
     );
 
     has author => (
         isa => Str,
-        is => 'ro',
+        is => 'rw',
         required => 1,
         default => 'Unknown'
     );
 
-    has uid => (
+    has id => (
         isa => Str,
-        is => 'ro',
+        is => 'rw',
         required => 1,
         lazy_build => 1
     );
 
     has published => (
-        is => 'ro',
+        is => 'rw',
         coerce => 1,
         isa => DateTime_T,
+        lazy_build => 1,
         required => 1
     );
 
     has format => (
-        is => 'ro',
+        is => 'rw',
         isa => Str,
+        lazy_build => 1,
         required => 1
     );
 
-    has link => (
-        is => 'ro',
+    has uri => (
+        is => 'rw',
         isa => Uri,
         coerce => 1,
-        required => 1
+        lazy_build => 1,
+        required => 1,
+        handles => {link => 'as_string'}
     );
 
-    has base_link => (
-        is => 'ro',
+    has base_uri => (
+        is => 'rw',
         isa => Uri,
         coerce => 1,
-        required => 1
+        lazy_build => 1,
+        required => 1,
+        handles => {base_link => 'as_string'}
     );
 
-    method _build_id {
-        $self->id(
-            md5_base64(
-                $self->id,
-                $self->published
-            )
-        );
+    has xml_entry => (
+        is => 'rw',
+        isa => Entry_T,
+    );
+
+    method BUILDARGS(ClassName $class: Entry_T $entry) {
+        return $class->next::method({xml_entry=>$entry});
     }
+
+    method BUILD {
+        if (my $entry = $self->xml_entry) {
+            for my $attr (qw/title format author/) {
+                $self->$attr($entry->$attr);
+            }
+
+            $self->uri($entry->link);
+            $self->base_uri($entry->base_link);
+
+            $self->published(
+                $entry->modified | $entry->issued
+            );
+
+            (length($entry->content->body) >= length($entry->summary->body))
+                ? $self->body($entry->content->body)
+                    : $self->content($entry->summary->body);
+
+            $self->id(
+                md5_base64(
+                    $entry->id,
+                    $self->published
+                )
+            );
+
+            $self->xml_entry(undef);
+        }
+    }
+    
 }
 
 
