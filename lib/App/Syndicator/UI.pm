@@ -128,19 +128,16 @@ class App::Syndicator::UI  {
         my $status_bar = $self->status_window->add(
             'status', 'TextViewer',
         );
-
         $self->status_bar($status_bar);
 
         my $textview = $self->main_window->add(
             'reader', 'TextViewer',
         );
-
         $self->viewer($textview);
 
         my $header_bar = $self->header_window->add(
             'header', 'TextViewer',
         );
-
         $self->header_bar($header_bar);
 
         my $listbox = $self->list_window->add(
@@ -150,27 +147,33 @@ class App::Syndicator::UI  {
             -labels => {1 => 'No messages'},
             -onselchange => sub { $self->_message_list_change(@_) } 
         );
-
         $self->message_list($listbox);
-        $self->_list_messages($self->db->all_messages);
 
         $self->_bind_keys;
         $self->home;
+        $self->_populate_message_list(
+            $self->db->all_messages
+        );
     }
 
     method _bind_keys {
-        $self->set_binding( sub { exit }, "\cq");
-        $self->set_binding( sub { $self->fetch_messages }, "\cf");
-        $self->set_binding( sub { $self->home }, "\ch");
+        $self->set_binding( sub { exit }, "q");
+        $self->set_binding( sub { $self->fetch_messages }, "f");
+        $self->set_binding( sub { $self->message_delete }, "d");
+        $self->set_binding( sub { $self->home }, "h");
     }
 
-    method _list_messages (Message_T @messages) {
+    method _populate_message_list (Message_T @messages) {
         $self->message_list->values( 
-          [  map { $_->id } @messages ]
+            [  map { $_->id } @messages ]
         );
 
         $self->message_list->labels(
-            { map { $_->id => $_->title } @messages }
+            { map { 
+                $_->id => 
+                    $_->is_read ? $_->title : '[UNREAD] '.$_->title
+                } @messages 
+            }
         );
 
         $self->message_list->focus;
@@ -181,29 +184,69 @@ class App::Syndicator::UI  {
         
         return unless defined $msg_id;
 
-        my $msg = $self->db->lookup($msg_id);
+        my $msg = eval { $self->db->lookup($msg_id) };
+        return unless defined $msg;
 
+        $self->_message_mark_read($msg);
         $self->_render_message($msg);
         $self->message_list->focus;
     }
 
+    method _message_mark_read (Message_T $msg) {
+        $msg->is_read(1);
+        
+        $self->db->store($msg);
+        
+        $self->message_list->labels->{$msg->id} = $msg->title;
+        $self->message_list->focus;
+    }
+
+    method message_delete {
+        my @selected = $self->message_list->get;
+        
+        $self->message_list->clear_selection;
+
+        for my $id (@selected) {
+            print STDERR "deleting $id";
+            delete $self->message_list->labels->{$id};
+            eval { $self->db->delete($id) };
+            warn "error deleting blah $@\n" if $@;
+
+            $self->message_list->values([
+                grep { $id ne $_ } 
+                    @{$self->message_list->values}
+            ]);
+        }
+
+        $self->message_list->focus;
+    }
+
     method fetch_messages {
-        $self->status_text('Fetching messages..');
-        $self->status_bar->focus;
-        my $n = $self->db->fetch;
-        $self->status_text("$n new message"
+        $self->_status_text('Fetching messages..');
+        
+        my @msgs = $self->db->fetch;
+
+        my $n = scalar(@msgs);
+
+        $self->_status_text("$n new message"
             .($n>1?'s!':'!'));
-        $self->status_bar->focus;
+
+        for my $msg (@msgs) {
+            push @{$self->message_list->values}, $msg->id;
+            $self->message_list->labels->{$msg->id} = '[UNREAD] '.$msg->title;
+        }
+
+        $self->message_list->focus;
     }
 
     method home {
         my $help_txt = "\nWelcome!\n"
-            . "ctrl + q - quit\n"
-            . "ctrl + f - fetch messages\n"
-            . "ctrl + h - help (this screen)\n";
+            . "q - quit\n"
+            . "f - fetch messages\n"
+            . "h - help (this screen)\n";
     
-        $self->status_text('Home');
-        $self->viewer_text($help_txt);
+        $self->_status_text('Home');
+        $self->_viewer_text($help_txt);
     }
 
     method _render_message (Message_T $msg) {
@@ -214,16 +257,16 @@ class App::Syndicator::UI  {
         $self->header_bar->text($title);
         $self->header_bar->focus;
 
-        $self->viewer_text("$msg->body\n\n".$msg->link);
+        $self->_viewer_text($msg->body."\n\n".$msg->link);
     }
 
     
-    method viewer_text (Str $text){
+    method _viewer_text (Str $text){
         $self->viewer->text($text);
         $self->viewer->focus;
     }
 
-    method status_text (Str $text?) {
+    method _status_text (Str $text?) {
         $text =~ s/\n//g;
 
         $self->status_bar->text(

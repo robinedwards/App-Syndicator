@@ -1,32 +1,31 @@
 use MooseX::Declare;
 
-class App::Syndicator::Message {
-    use MooseX::Types::Moose 'Str';
+class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
+    use MooseX::Types::Moose qw/Str Bool/;
     use MooseX::Types::URI 'Uri';
+    use MooseX::Types::DateTime 'DateTime';
     use App::Syndicator::Types ':all';
     use Digest::MD5 'md5_base64';
 
     has title => (
         is => 'rw',
-        coerce => 1,
-        isa => MessageTitle_T,
+        isa => Str,
         lazy_build => 1,
-        required => 1
+        required => 1,
     );
 
     has body => (
         is => 'rw',
-        coerce => 1,
-        isa => MessageBody_T,
+        isa => Str,
         lazy_build => 1,
-        required => 1
+        required => 1,
     );
 
     has author => (
         isa => Str,
         is => 'rw',
         required => 1,
-        default => 'Unknown'
+        lazy_build => 1,
     );
 
     has id => (
@@ -39,7 +38,7 @@ class App::Syndicator::Message {
     has published => (
         is => 'rw',
         coerce => 1,
-        isa => DateTime_T,
+        isa => DateTime,
         lazy_build => 1,
         required => 1
     );
@@ -65,13 +64,17 @@ class App::Syndicator::Message {
         isa => Uri,
         coerce => 1,
         lazy_build => 1,
-        required => 1,
         handles => {base_link => 'as_string'}
+    );
+
+    has is_read => (
+        is => 'rw',
+        isa => Bool,
+        default => 0,
     );
 
     has xml_entry => (
         is => 'rw',
-        isa => Entry_T,
     );
 
     method BUILDARGS(ClassName $class: Entry_T $entry) {
@@ -80,20 +83,32 @@ class App::Syndicator::Message {
 
     method BUILD {
         if (my $entry = $self->xml_entry) {
-            for my $attr (qw/title format author/) {
-                $self->$attr($entry->$attr);
-            }
+            $self->author($entry->author) 
+                if defined $entry->author;
+
+            my $title = $self->html_to_ascii($entry->title);
+            $title =~ s/\n//g;
+            $self->title($title);
 
             $self->uri($entry->link);
-            $self->base_uri($entry->base_link);
+            $self->base_uri($entry->base) if defined $entry->base;
 
             $self->published(
-                $entry->modified | $entry->issued
+                $entry->modified || $entry->issued
             );
 
-            (length($entry->content->body) >= length($entry->summary->body))
-                ? $self->body($entry->content->body)
-                    : $self->content($entry->summary->body);
+            my $content = $entry->content->body;  
+            my $summary = $entry->summary->body;
+
+            if (defined $content && length($content)) {
+                $self->body($self->html_to_ascii($content));
+            }
+            elsif (defined $summary && length($summary)) {
+                $self->body($self->html_to_ascii($summary))
+            }
+            else {
+                die "no body for this message!";
+            }
 
             $self->id(
                 md5_base64(
@@ -105,7 +120,6 @@ class App::Syndicator::Message {
             $self->xml_entry(undef);
         }
     }
-    
 }
 
 

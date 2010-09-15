@@ -1,6 +1,6 @@
 use MooseX::Declare;
 
-class App::Syndicator::Types with App::Syndicator::HtmlToAscii {
+class App::Syndicator::Types {
     use Moose::Util::TypeConstraints;
     use MooseX::Types::Moose qw/Object ArrayRef Str Int Bool/;
     use MooseX::Types -declare=> [qw/
@@ -32,22 +32,6 @@ class App::Syndicator::Types with App::Syndicator::HtmlToAscii {
         as Int,
         where { 
             $_ > -1;
-        };
-
-    subtype MessageBody_T,
-        as Str;
-    coerce MessageBody_T,
-        from Str,
-        via sub {
-            $_ = __PACKAGE__->html_to_ascii($_)
-        };
-
-    subtype MessageTitle_T,
-        as MessageBody_T;
-    coerce MessageTitle_T,
-        from MessageBody_T,
-        via sub {
-            $_ =~ s/\n//g
         };
 
     subtype Entry_T,

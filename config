@@ -1,5 +1,14 @@
 {
     "sources": [
+            "http://blogs.perl.org/atom.xml",
+            "http://www.perl.org/pub/atom.xml",
+            "http://planet.perl.org/rss20.xml",
+            "http://ironman.enlightenedperl.org/atom.xml",
+            "http://twitter.com/statuses/user_timeline/16049997.rss",
+            "http://twitter.com/statuses/user_timeline/174584563.rss",
+            "http://twitter.com/statuses/user_timeline/17767531.rss",
+            "http://twitter.com/statuses/user_timeline/14538270.rss",
+            "http://twitter.com/statuses/user_timeline/110451384.rss", 
             "http://rss.slashdot.org/Slashdot/slashdot",
             "http://www.theregister.co.uk/software/headlines.atom" 
     ]

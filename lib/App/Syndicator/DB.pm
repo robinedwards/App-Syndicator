@@ -3,17 +3,20 @@ use MooseX::Declare;
 class App::Syndicator::DB {
     use KiokuDB;
     use XML::Feed::Aggregator;
+    use DateTime;
     use App::Syndicator::Message;
     use App::Syndicator::Types qw/
         KiokuDB_T Message_T UriArray Aggregator_T
         /;
     use MooseX::Types::Moose 'Str';
+    require DBI;
+    require DBD::SQLite; 
 
     has dsn => (
         is => 'ro',
         isa => Str,
         required => 1,
-        default => "dbi:SQLite:dbname=$ENV{HOME}/.syndicator.db"
+        default => "DBI:SQLite:dbname=/tmp/syndicator.db"
     );
 
     has directory => (
@@ -21,8 +24,12 @@ class App::Syndicator::DB {
         isa => KiokuDB_T,
         required => 1,
         lazy_build => 1,
-        predicate => 'dsn',
-        handles => [qw/delete lookup/]
+        handles => [qw/delete lookup update store/]
+    );
+
+    has scope => (
+        is => 'rw',
+        isa => 'Object',
     );
 
      # list of rss / atom uris
@@ -51,34 +58,39 @@ class App::Syndicator::DB {
         
         my $n = 0;
 
+        my @new_messages;
+
         for my $entry ($self->aggregator->entries) {
-            $n++ if $self->store(
-                App::Syndicator::Message->new($entry)
-            );
+            my $msg = eval { App::Syndicator::Message->new($entry) };
+            next unless $msg;
+            next if eval { $self->lookup($msg->id) };
+
+            if ($self->directory->store($msg->id => $msg)) {
+               push @new_messages, $msg;
+            }
         }
 
-        return $n;
+        return @new_messages;
     } 
 
 
-    method _build_directory {
+    method BUILD {
         $self->directory(
             KiokuDB->connect(
                 $self->dsn,
                 create => 1
             )
         );
-    }
 
-    # TODO setup root for messages
-    method store (Message_T $msg) {
-        return if $self->lookup($msg->id);
-        return 1
-           if ($self->directory->store($msg->id => $msg));
+        $self->scope(
+            $self->directory->new_scope
+        );
     }
 
     method all_messages {
-        return $self->directory->all_objects->items;
+        return sort {
+            $b->published->compare($a->published)
+        } $self->directory->all_objects->items;
     }
 }
 
