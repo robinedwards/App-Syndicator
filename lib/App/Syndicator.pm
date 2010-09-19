@@ -6,7 +6,6 @@ class App::Syndicator with (App::Syndicator::Config,
     use App::Syndicator::UI;
     use App::Syndicator::DB;
 
-    our $VERSION = 0.001;
 
     has +configfile => (
         is => 'ro',
@@ -25,7 +24,6 @@ class App::Syndicator with (App::Syndicator::Config,
     method run {
         my $db = App::Syndicator::DB->new(
             sources => $self->sources,
-
         );
 
         my $ui = App::Syndicator::UI->new(

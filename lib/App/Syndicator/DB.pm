@@ -9,14 +9,12 @@ class App::Syndicator::DB {
         KiokuDB_T Message_T UriArray Aggregator_T
         /;
     use MooseX::Types::Moose 'Str';
-    require DBI;
-    require DBD::SQLite; 
 
     has dsn => (
         is => 'ro',
         isa => Str,
         required => 1,
-        default => "DBI:SQLite:dbname=/tmp/syndicator.db"
+        default => "DBI:SQLite:dbname=$ENV{HOME}/.syndicator.db"
     );
 
     has directory => (
