@@ -42,11 +42,24 @@ __END__
 
 =head1 NAME
 
-App::Syndicator - Perl application for feed syndication
+App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
 =head1 SYNOPSIS
 
- $ syndicator [--config=/your/config.any]
+ $ syndicator [--config=$HOME/.syndicator]
+
+ # example config (JSON) 
+
+ {
+    "sources": [
+            "http://blogs.perl.org/atom.xml",
+            "http://www.perl.org/pub/atom.xml",
+            "http://planet.perl.org/rss20.xml",
+            "http://ironman.enlightenedperl.org/atom.xml",
+            "http://rss.slashdot.org/Slashdot/slashdot",
+            "http://www.theregister.co.uk/software/headlines.atom"
+    ]
+}
 
 =head1 SEE ALSO
 

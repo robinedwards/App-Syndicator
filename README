@@ -1,20 +1,23 @@
 App-Syndicator version 0.001
 ===========================
-
-A console feed reader, currently under development.
+NAME
+       App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
 USAGE
+        $ syndicator [--config=$HOME/.syndicator]
 
- syndicator [-?] [long options...]
-        --store                
-        --importer             
-        --view                 
-        --show-entries         
-        --tick                 
-        --fetch-interval       
-        --configfile           
-        --sources              
-        -? --usage --help     Prints this usage information.
+        # example config (JSON)
+
+        {
+           "sources": [
+                   "http://blogs.perl.org/atom.xml",
+                   "http://www.perl.org/pub/atom.xml",
+                   "http://planet.perl.org/rss20.xml",
+                   "http://ironman.enlightenedperl.org/atom.xml",
+                   "http://rss.slashdot.org/Slashdot/slashdot",
+                   "http://www.theregister.co.uk/software/headlines.atom"
+           ]
+       }
 
 INSTALLATION
 
@@ -24,6 +27,9 @@ To install this module type the following:
    make
    make test
    make install
+
+AUTHOR
+       Rob Edwards, <rge@cpan.org>
 
 COPYRIGHT AND LICENCE
 
