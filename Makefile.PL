@@ -1,27 +1,34 @@
-use 5.008008;
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-WriteMakefile(
-    NAME              => 'App::Syndicator',
-    VERSION_FROM      => 'lib/App/Syndicator.pm',
-    PREREQ_PM         => {
-        MooseX::Declare => 0,
-        MooseX::MultiMethods => 0,
-        MooseX::Types => 0,
-        MooseX::Types::URI => 0,
-        MooseX::Types::DateTime => 0,
-        MooseX::Getopt => 0,
-        MooseX::ConfigFromFile => 0,
-        MooseX::Storage => 0,
-        Config::Any => 0,
-        JSON::Any => 0,
-        HTML::FormatText => 0,
-        Term::ANSIColor => 0,
-        Curses::UI => 0,
-        XML::Feed::Aggregator => 0.03,
-        Perl6::Junction => 0,
-    },
-    ($] >= 5.005 ?   
-      (ABSTRACT_FROM  => 'lib/App/Syndicator.pm',
-       AUTHOR         => 'Rob Edwards <rge@cpan.org>') : ()),
-);
+name 'App-Syndicator';
+abstract_from 'lib/App/Syndicator.pm';
+version 0.001;
+license 'perl';
+perl_version '5.008';
+
+requires 'MooseX::Declare' => 0;
+requires 'MooseX::MultiMethods' => 0;
+requires 'MooseX::Types' => 0;
+requires 'MooseX::Types::URI' => 0;
+requires 'MooseX::Types::DateTime' => 0;
+requires 'MooseX::Getopt' => 0;
+requires 'MooseX::ConfigFromFile' => 0;
+requires 'MooseX::Storage' => 0;
+requires 'Config::Any' => 0;
+requires 'JSON::Any' => 0;
+requires 'HTML::FormatText' => 0;
+requires 'Term::ANSIColor' => 0;
+requires 'Curses::UI' => 0;
+requires 'XML::Feed::Aggregator' => 0.03;
+requires 'Perl6::Junction' => 0;
+requires 'KiokuDB' => 0;
+requires 'DateTime' => 0;
+requires 'Digest::MD5' => 0;
+
+test_requires 'Test::NoWarnings' => 0;
+test_requires 'Test::More' => 0;
+
+install_script "syndicator";
+tests "t/*.t";
+
+WriteAll;
