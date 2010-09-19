@@ -6,12 +6,11 @@ class App::Syndicator with (App::Syndicator::Config,
     use App::Syndicator::UI;
     use App::Syndicator::DB;
 
-
     has +configfile => (
         is => 'ro',
         required => 1,
         isa => File,
-        default => "config",
+        default => "$ENV{HOME}/.syndicator",
     );
 
     has sources => (
@@ -33,7 +32,6 @@ class App::Syndicator with (App::Syndicator::Config,
         $ui->mainloop;
     }
 }
-
 
 1;
 __END__
