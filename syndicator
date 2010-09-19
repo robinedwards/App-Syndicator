@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use lib 'lib';
 use App::Syndicator;
 binmode STDOUT, ":utf8";
 
