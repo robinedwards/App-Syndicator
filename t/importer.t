@@ -1,11 +1,11 @@
 use strict;
 use warnings;
 use Test::More qw/no_plan/;
-use Test::NoWarnings;
+use Data::Dumper;
 BEGIN { use_ok('App::Syndicator::DB') };
 
 my $db = App::Syndicator::DB->new(
-    dsn => "DBI:SQLite:dbname=$ENV{HOME}/.syndicator.db",
+    dsn => "DBI:SQLite:dbname=:memory:",
     sources => [ "http://blogs.perl.org/atom.xml" ],
 );
 
