@@ -44,12 +44,12 @@ __END__
 
 App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
-=head1 SYNOPSIS
+=head1 USAGE
 
  # first run
  $ syndicator --init
 
- # add sources
+ # add your own feeds
  $ vim ~/.syndicator/config.json 
 
  # run

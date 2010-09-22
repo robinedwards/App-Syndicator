@@ -4,20 +4,14 @@ NAME
        App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
 USAGE
-        $ syndicator [--config=$HOME/.syndicator]
+   # first run
+   $ syndicator --init
 
-        # example config (JSON)
+   # add your own feeds
+   $ vim ~/.syndicator/config.json 
 
-        {
-           "sources": [
-                   "http://blogs.perl.org/atom.xml",
-                   "http://www.perl.org/pub/atom.xml",
-                   "http://planet.perl.org/rss20.xml",
-                   "http://ironman.enlightenedperl.org/atom.xml",
-                   "http://rss.slashdot.org/Slashdot/slashdot",
-                   "http://www.theregister.co.uk/software/headlines.atom"
-           ]
-       }
+   # run
+   $ syndicator 2> errors.log
 
 INSTALLATION
 
@@ -40,5 +34,3 @@ Copyright (C) 2010 by Rob Edwards
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.12.1 or,
 at your option, any later version of Perl 5 you may have available.
-
-
