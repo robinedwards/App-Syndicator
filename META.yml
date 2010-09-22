@@ -1,0 +1,42 @@
+---
+abstract: 'Curses interface for reading RSS / ATOM feeds.'
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+  Test::More: 0.94
+  Test::UseAllModules: 0.12
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+distribution_type: module
+generated_by: 'Module::Install version 1.00'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: App-Syndicator
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  Config::Any: 0.2
+  Curses::UI: 0.9607
+  DBD::SQLite: 1.29
+  DateTime: 0.61
+  Digest::MD5: 2.39
+  HTML::FormatText: 2.04
+  IO::All: 0.41
+  JSON::Any: 1.22
+  KiokuDB: 0.49
+  KiokuDB::Backend::DBI: 1.15
+  MooseX::ConfigFromFile: 0.02
+  MooseX::Declare: 0.33
+  MooseX::Getopt: 0.31
+  MooseX::Types: 0.23
+  MooseX::Types::DateTime: 0.05
+  MooseX::Types::URI: 0.02
+  Try::Tiny: 0.06
+  XML::Feed::Aggregator: 0.03
+  perl: 5.8.0
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.001
