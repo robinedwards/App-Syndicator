@@ -12,7 +12,8 @@ class App::Syndicator::UI  {
         default =>  sub { 
             Curses::UI->new(
                 -color_support => 1,
-                -clear_on_exit => 1
+                -clear_on_exit => 1,
+                -mouse_support => 0,
             ) 
         }, 
         handles => [qw/set_binding mainloop schedule_event/]
@@ -139,6 +140,7 @@ class App::Syndicator::UI  {
 
         my $textview = $self->main_window->add(
             'reader', 'TextViewer',
+            -wrapping => 1,
         );
         $self->viewer($textview);
 
@@ -180,7 +182,6 @@ class App::Syndicator::UI  {
     }
 
     method message_delete {
-
         for my $id ($self->_selected_messages) {
             my $pos = $self->message_list->{-ypos};
             delete $self->message_list->labels->{$id};
@@ -235,6 +236,7 @@ class App::Syndicator::UI  {
 
     method fetch_messages {
         $self->_status_text('Fetching messages..');
+        return;
 
         my @msgs = $self->db->fetch;
 
@@ -245,7 +247,6 @@ class App::Syndicator::UI  {
         }
 
         $self->_update_message_count;
-        $self->switch_focus;
     }
 
     method home {
@@ -323,6 +324,9 @@ EOD
         $self->_message_mark_read($msg)
             unless $msg->is_read;
         $self->_render_message($msg);
+        $self->viewer->cursor_to_home;
+        $self->viewer->layout;
+        $self->viewer->focus;
         $self->message_list->focus;
         $self->focus('message_list');
     }
@@ -366,7 +370,7 @@ EOD
         $text =~ s/\n//g;
 
         $self->status_bar->text(
-            "App::Syndicator | $text\n"
+            "App::Syndicator | $text"
         );
 
         $self->status_bar->focus;
