@@ -2,7 +2,7 @@ use inc::Module::Install;
 
 name 'App-Syndicator';
 abstract_from 'lib/App/Syndicator.pm';
-version 0.001;
+version 0.002;
 license 'perl';
 perl_version '5.008';
 

@@ -7,6 +7,7 @@ class App::Syndicator with (App::Syndicator::Config,
     use App::Syndicator::UI;
     use App::Syndicator::DB;
 
+    our $VERSION = 0.002;
     our $BASE = "$ENV{HOME}/.syndicator";
 
     has +configfile => (

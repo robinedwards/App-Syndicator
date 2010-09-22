@@ -1,4 +1,4 @@
-App-Syndicator version 0.001
+App-Syndicator version 0.002
 ===========================
 NAME
        App::Syndicator - Curses interface for reading RSS / ATOM feeds.
