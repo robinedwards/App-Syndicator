@@ -180,7 +180,9 @@ class App::Syndicator::UI  {
     }
 
     method message_delete {
+
         for my $id ($self->_selected_messages) {
+            my $pos = $self->message_list->{-ypos};
             delete $self->message_list->labels->{$id};
             
             my $msg = $self->db->lookup($id);
@@ -192,6 +194,12 @@ class App::Syndicator::UI  {
                 grep { $id ne $_ } 
                     @{$self->message_list->values}
             ]);
+
+            $self->message_list->{-ypos} 
+                = $pos <= $self->message_list->{-max_selected}
+                    ? $pos : $self->message_list->{-max_selected};
+
+            $self->_message_list_change;
         }
 
         $self->_update_message_count;
@@ -316,7 +324,8 @@ EOD
         my $msg = eval { $self->db->lookup($msg_id) };
         return unless defined $msg;
 
-        $self->_message_mark_read($msg);
+        $self->_message_mark_read($msg)
+            unless $msg->is_read;
         $self->_render_message($msg);
         $self->message_list->focus;
     }
@@ -330,7 +339,6 @@ EOD
         
         $self->_update_message_count;
         $self->message_list->labels->{$msg->id} = $msg->title;
-        $self->message_list->focus;
     }
 
     method _update_message_count {
