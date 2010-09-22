@@ -235,21 +235,17 @@ class App::Syndicator::UI  {
 
     method fetch_messages {
         $self->_status_text('Fetching messages..');
-        
+
         my @msgs = $self->db->fetch;
-
-        my $n = scalar(@msgs);
-
-        $self->_status_text("$n new message"
-            .($n>1?'s!':'!'));
 
         for my $msg (@msgs) {
             push @{$self->message_list->values}, $msg->id;
             $self->message_list->labels->{$msg->id} 
-                = '<underline>'.$msg->title.'</underline>';
+            = '<underline>'.$msg->title.'</underline>';
         }
 
-        $self->message_list->focus;
+        $self->_update_message_count;
+        $self->switch_focus;
     }
 
     method home {
@@ -328,6 +324,7 @@ EOD
             unless $msg->is_read;
         $self->_render_message($msg);
         $self->message_list->focus;
+        $self->focus('message_list');
     }
 
     method _message_mark_read (Message_T $msg) {
@@ -369,7 +366,7 @@ EOD
         $text =~ s/\n//g;
 
         $self->status_bar->text(
-            "App::Syndicator | $text"
+            "App::Syndicator | $text\n"
         );
 
         $self->status_bar->focus;
