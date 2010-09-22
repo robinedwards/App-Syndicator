@@ -25,8 +25,10 @@ class App::Syndicator::Types {
 
     subtype File,
         as Str,
-        where { -f $_ },
-        message {"$_ is not a file" };
+        where {
+            -f $_;
+        },
+        message {"\n\n This '$_' is not a file\n\n" };
 
     subtype PositiveInt,
         as Int,

@@ -1,6 +1,7 @@
 use MooseX::Declare;
 
 class App::Syndicator::UI  {
+    use MooseX::Types::Moose 'Str';
     use App::Syndicator::Types ':all';
     use Curses::UI;
 
@@ -79,6 +80,12 @@ class App::Syndicator::UI  {
         lazy_build => 1,
     );
 
+    has focus => (
+        is => 'rw',
+        isa => Str,
+        default => 'message_list'
+    );
+
     method _build_status_window {
         my $status_win = $self->curses->add(
             'status', 'Window',
@@ -145,22 +152,144 @@ class App::Syndicator::UI  {
             -multi => 1,
             -values => [1],
             -labels => {1 => 'No messages'},
-            -onselchange => sub { $self->_message_list_change(@_) } 
+            -onselchange => sub { $self->_message_list_change(@_) },
+            -vscrollbar => 'right',
         );
         $self->message_list($listbox);
 
         $self->_bind_keys;
-        $self->home;
+        $self->_init;
+    }
+
+    method _init {
         $self->_populate_message_list(
             $self->db->all_messages
         );
+        $self->home;
+        $self->_update_message_count;
+        $self->list_window->focus;
     }
 
     method _bind_keys {
         $self->set_binding( sub { exit }, "q");
         $self->set_binding( sub { $self->fetch_messages }, "f");
         $self->set_binding( sub { $self->message_delete }, "d");
+        $self->set_binding( sub { $self->message_toggle_read }, "r");
         $self->set_binding( sub { $self->home }, "h");
+        $self->set_binding( sub { $self->switch_focus }, "\t");
+    }
+
+    method message_delete {
+        for my $id ($self->_selected_messages) {
+            delete $self->message_list->labels->{$id};
+            
+            my $msg = $self->db->lookup($id);
+            $self->db->dec_unread unless $msg->is_read;
+            $self->db->delete($id);
+            $self->db->dec_total;
+
+            $self->message_list->values([
+                grep { $id ne $_ } 
+                    @{$self->message_list->values}
+            ]);
+        }
+
+        $self->_update_message_count;
+
+        $self->message_list->focus;
+    }
+
+    method message_toggle_read {
+        for my $id ($self->_selected_messages) {
+            my $msg = $self->db->lookup($id);
+
+            $msg->is_read(!$msg->is_read);
+
+            if ($msg->is_read) {
+                $self->message_list->labels->{$id}
+                    = $msg->title;
+
+                $self->db->dec_unread;
+            }
+            else {
+                $self->message_list->labels->{$id}
+                    = "<bold>".$msg->title."</bold>";
+
+                $self->db->inc_unread;
+            }
+
+            $self->db->store($msg);
+        }
+
+        $self->_update_message_count;
+        $self->message_list->focus;
+    }
+
+    method fetch_messages {
+        $self->_status_text('Fetching messages..');
+        
+        my @msgs = $self->db->fetch;
+
+        my $n = scalar(@msgs);
+
+        $self->_status_text("$n new message"
+            .($n>1?'s!':'!'));
+
+        for my $msg (@msgs) {
+            push @{$self->message_list->values}, $msg->id;
+            $self->message_list->labels->{$msg->id} 
+                = '<underline>'.$msg->title.'</underline>';
+        }
+
+        $self->message_list->focus;
+    }
+
+    method home {
+        $self->_status_text('Help');
+        my $help_text = << 'EOD';
+
+Key bindings
+
+f     - fetch messages
+d     - delete selected messages
+r     - toggle read
+j     - move up
+k     - down down
+/     - search forwards
+?     - search backwards
+space - select or de-select
+tab   - switch focus"
+h     - help (this screen)
+q     - quit
+
+Links
+
+* CPAN   - http://search.cpan.org/~rge/
+* GitHub - http://github.com/robinedwards/App-Syndicator
+
+EOD
+        $self->_viewer_text($help_text);
+    }
+
+    method switch_focus {
+        if ($self->focus eq 'message_list') {
+            $self->focus('viewer');
+            $self->viewer->focus;
+        }
+        else {
+            $self->focus('message_list');
+            $self->message_list->focus;
+        }
+    }
+
+    method _selected_messages {
+        my @selected = $self->message_list->get;
+        
+        unless (scalar @selected) {
+            @selected = ($self->message_list->get_active_value);
+        }
+
+        return @selected;
     }
 
     method _populate_message_list (Message_T @messages) {
@@ -171,7 +300,7 @@ class App::Syndicator::UI  {
         $self->message_list->labels(
             { map { 
                 $_->id => 
-                    $_->is_read ? $_->title : '[UNREAD] '.$_->title
+                    $_->is_read ? $_->title : '<bold>'.$_->title.'</bold>'
                 } @messages 
             }
         );
@@ -193,60 +322,23 @@ class App::Syndicator::UI  {
     }
 
     method _message_mark_read (Message_T $msg) {
+        $self->db->dec_unread
+            unless $msg->is_read;
+
         $msg->is_read(1);
-        
         $self->db->store($msg);
         
+        $self->_update_message_count;
         $self->message_list->labels->{$msg->id} = $msg->title;
         $self->message_list->focus;
     }
 
-    method message_delete {
-        my @selected = $self->message_list->get;
-        
-        $self->message_list->clear_selection;
-
-        for my $id (@selected) {
-            print STDERR "deleting $id";
-            delete $self->message_list->labels->{$id};
-            eval { $self->db->delete($id) };
-            warn "error deleting blah $@\n" if $@;
-
-            $self->message_list->values([
-                grep { $id ne $_ } 
-                    @{$self->message_list->values}
-            ]);
-        }
-
-        $self->message_list->focus;
-    }
-
-    method fetch_messages {
-        $self->_status_text('Fetching messages..');
-        
-        my @msgs = $self->db->fetch;
-
-        my $n = scalar(@msgs);
-
-        $self->_status_text("$n new message"
-            .($n>1?'s!':'!'));
-
-        for my $msg (@msgs) {
-            push @{$self->message_list->values}, $msg->id;
-            $self->message_list->labels->{$msg->id} = '[UNREAD] '.$msg->title;
-        }
-
-        $self->message_list->focus;
-    }
-
-    method home {
-        my $help_txt = "\nWelcome!\n"
-            . "q - quit\n"
-            . "f - fetch messages\n"
-            . "h - help (this screen)\n";
-    
-        $self->_status_text('Home');
-        $self->_viewer_text($help_txt);
+    method _update_message_count {
+        $self->_status_text(
+            $self->db->total. " messages, "
+            . $self->db->unread
+            . " unread."
+        );
     }
 
     method _render_message (Message_T $msg) {
@@ -259,7 +351,6 @@ class App::Syndicator::UI  {
 
         $self->_viewer_text($msg->body."\n\n".$msg->link);
     }
-
     
     method _viewer_text (Str $text){
         $self->viewer->text($text);
@@ -270,9 +361,7 @@ class App::Syndicator::UI  {
         $text =~ s/\n//g;
 
         $self->status_bar->text(
-            "App::Syndicator v"
-            . $App::Syndicator::VERSION
-            . " - $text"
+            "App::Syndicator | $text"
         );
 
         $self->status_bar->focus;

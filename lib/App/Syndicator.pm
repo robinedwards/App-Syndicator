@@ -3,30 +3,34 @@ use MooseX::Declare;
 class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
     use App::Syndicator::Types qw/File UriArray/;
+    use MooseX::Types::Moose qw/Bool HashRef/;
     use App::Syndicator::UI;
     use App::Syndicator::DB;
 
+    our $BASE = "$ENV{HOME}/.syndicator";
+
     has +configfile => (
         is => 'ro',
-        required => 1,
         isa => File,
-        default => "$ENV{HOME}/.syndicator",
+        required => 1,
+        default => "$BASE/config.json"
     );
 
     has sources => (
         is => 'rw',
-        required => 1,
         isa => UriArray,
         coerce => 1,
+        required => 1,
     );
 
     method run {
         my $db = App::Syndicator::DB->new(
+            dsn => "DBI:SQLite:dbname=$BASE/main.db",
             sources => $self->sources,
         );
 
         my $ui = App::Syndicator::UI->new(
-            db => $db
+            db => $db,
         );
 
         $ui->mainloop;
@@ -42,9 +46,16 @@ App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
 =head1 SYNOPSIS
 
- $ syndicator [--config=$HOME/.syndicator]
+ # first run
+ $ syndicator --init
 
- # example config (JSON) 
+ # add sources
+ $ vim ~/.syndicator/config.json 
+
+ # run
+ $ syndicator 2> errors.log
+
+=head2 EXAMPLE CONFIG
 
  {
     "sources": [

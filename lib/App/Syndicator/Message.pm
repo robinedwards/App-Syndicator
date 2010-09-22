@@ -3,7 +3,8 @@ use MooseX::Declare;
 class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
     use MooseX::Types::Moose qw/Str Bool/;
     use MooseX::Types::URI 'Uri';
-    use MooseX::Types::DateTime 'DateTime';
+    use MooseX::Types::DateTime;
+    use DateTime;
     use App::Syndicator::Types ':all';
     use Digest::MD5 'md5_base64';
 
@@ -38,7 +39,7 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
     has published => (
         is => 'rw',
         coerce => 1,
-        isa => DateTime,
+        isa => 'DateTime',
         lazy_build => 1,
         required => 1
     );
@@ -94,7 +95,7 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
             $self->base_uri($entry->base) if defined $entry->base;
 
             $self->published(
-                $entry->modified || $entry->issued
+                $entry->modified || $entry->issued || DateTime->now
             );
 
             my $content = $entry->content->body;  

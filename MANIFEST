@@ -9,7 +9,6 @@ lib/App/Syndicator/Types.pm
 lib/App/Syndicator/UI.pm
 Makefile.PL
 MANIFEST
-META.yml
 README
 syndicator
 t/00-use.t
