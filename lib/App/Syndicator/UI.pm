@@ -189,8 +189,8 @@ class App::Syndicator::UI  {
             delete $self->message_list->labels->{$id};
             
             my $msg = $self->db->lookup($id);
+            $msg->delete;
             $self->db->dec_unread unless $msg->is_read;
-            $self->db->delete($id);
             $self->db->dec_total;
 
             $self->message_list->values([
@@ -198,6 +198,7 @@ class App::Syndicator::UI  {
                     @{$self->message_list->values}
             ]);
 
+            # select next in list
             $self->message_list->{-ypos} 
                 = $pos <= $self->message_list->{-max_selected}
                     ? $pos : $self->message_list->{-max_selected};

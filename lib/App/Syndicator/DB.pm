@@ -129,8 +129,11 @@ class App::Syndicator::DB {
             $self->inc_total;
             $self->inc_unread unless $_->is_read;
             $_;
-        } sort {
+        }  sort {
             $b->published->compare($a->published)
+        } 
+        grep {
+            !$_->is_deleted
         } $self->directory->all_objects->items;
     }
 
