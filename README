@@ -22,6 +22,14 @@ To install this module type the following:
    make test
    make install
 
+BUGS
+
+- deleted messages being re-fetched
+- backgrounding fetch
+- errors not being shown
+- html to text rendering missing first char of each post
+- message ordering
+
 AUTHOR
        Rob Edwards, <rge@cpan.org>
 

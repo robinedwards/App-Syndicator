@@ -247,6 +247,8 @@ class App::Syndicator::UI  {
             $self->db->inc_total;
         }
 
+        $self->curses->layout;
+
         $self->_update_message_count;
     }
 
