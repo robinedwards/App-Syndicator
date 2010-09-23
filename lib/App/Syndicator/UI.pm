@@ -141,6 +141,7 @@ class App::Syndicator::UI  {
         my $textview = $self->main_window->add(
             'reader', 'TextViewer',
             -wrapping => 1,
+            -vscrollbar => 'right',
         );
         $self->viewer($textview);
 
@@ -169,7 +170,8 @@ class App::Syndicator::UI  {
         );
         $self->home;
         $self->_update_message_count;
-        $self->list_window->focus;
+        $self->curses->layout;
+        $self->switch_focus;
     }
 
     method _bind_keys {
@@ -204,8 +206,6 @@ class App::Syndicator::UI  {
         }
 
         $self->_update_message_count;
-
-        $self->message_list->focus;
     }
 
     method message_toggle_read {
@@ -231,12 +231,10 @@ class App::Syndicator::UI  {
         }
 
         $self->_update_message_count;
-        $self->message_list->focus;
     }
 
     method fetch_messages {
         $self->_status_text('Fetching messages..');
-        return;
 
         my @msgs = $self->db->fetch;
 
@@ -324,11 +322,7 @@ EOD
         $self->_message_mark_read($msg)
             unless $msg->is_read;
         $self->_render_message($msg);
-        $self->viewer->cursor_to_home;
-        $self->viewer->layout;
-        $self->viewer->focus;
         $self->message_list->focus;
-        $self->focus('message_list');
     }
 
     method _message_mark_read (Message_T $msg) {
@@ -363,7 +357,8 @@ EOD
     
     method _viewer_text (Str $text){
         $self->viewer->text($text);
-        $self->viewer->focus;
+        $self->viewer->cursor_to_home;
+        $self->curses->layout;
     }
 
     method _status_text (Str $text?) {
@@ -372,8 +367,8 @@ EOD
         $self->status_bar->text(
             "App::Syndicator | $text"
         );
-
-        $self->status_bar->focus;
+        
+        $self->curses->layout;
     }
 }
 
