@@ -242,6 +242,9 @@ class App::Syndicator::UI  {
             push @{$self->message_list->values}, $msg->id;
             $self->message_list->labels->{$msg->id} 
             = '<underline>'.$msg->title.'</underline>';
+
+            $self->db->inc_unread;
+            $self->db->inc_total;
         }
 
         $self->_update_message_count;
