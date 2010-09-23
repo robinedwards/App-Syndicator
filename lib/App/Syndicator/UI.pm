@@ -190,6 +190,7 @@ class App::Syndicator::UI  {
             
             my $msg = $self->db->lookup($id);
             $msg->delete;
+            $self->db->store($msg);
             $self->db->dec_unread unless $msg->is_read;
             $self->db->dec_total;
 
@@ -237,15 +238,11 @@ class App::Syndicator::UI  {
     method fetch_messages {
         $self->_status_text('Fetching messages..');
 
-        my @msgs = $self->db->fetch;
+        for my $msg ($self->db->fetch) {
+            unshift @{$self->message_list->values}, $msg->id;
 
-        for my $msg (@msgs) {
-            push @{$self->message_list->values}, $msg->id;
             $self->message_list->labels->{$msg->id} 
-            = '<underline>'.$msg->title.'</underline>';
-
-            $self->db->inc_unread;
-            $self->db->inc_total;
+                = '<underline>'.$msg->title.'</underline>';
         }
 
         $self->curses->layout;

@@ -74,12 +74,31 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
         default => 0,
     );
 
+    has is_deleted => (
+        is => 'rw',
+        isa => Bool,
+        default => 0,
+    );
+
+    has star => (
+        is => 'rw',
+        isa => Bool,
+        default => 0,
+    );
+
     has xml_entry => (
         is => 'rw',
     );
 
     method BUILDARGS(ClassName $class: Entry_T $entry) {
         return $class->next::method({xml_entry=>$entry});
+    }
+
+    method delete {
+        $self->title('');
+        $self->body('');
+        $self->star(0);
+        $self->is_deleted(1);
     }
 
     method BUILD {

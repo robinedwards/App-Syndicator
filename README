@@ -24,11 +24,11 @@ To install this module type the following:
 
 BUGS
 
-- deleted messages being re-fetched
 - backgrounding fetch
+- ui state on first fetch
+- use DBI search for message ordering
 - errors not being shown
 - html to text rendering missing first char of each post
-- message ordering
 
 AUTHOR
        Rob Edwards, <rge@cpan.org>
