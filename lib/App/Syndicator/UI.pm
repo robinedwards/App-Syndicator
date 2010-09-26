@@ -87,6 +87,27 @@ class App::Syndicator::UI  {
         default => 'message_list'
     );
 
+our $help_text = << 'EOD';
+Key bindings
+
+f     - fetch messages
+d     - delete selected messages
+r     - toggle read
+j     - move up
+k     - down down
+/     - search forwards
+?     - search backwards
+space - select or de-select
+tab   - switch focus"
+h     - help (this screen)
+q     - quit
+
+Links
+
+* CPAN   - http://search.cpan.org/~rge/
+* GitHub - http://github.com/robinedwards/App-Syndicator
+EOD
+
     method _build_status_window {
         my $status_win = $self->curses->add(
             'status', 'Window',
@@ -238,42 +259,25 @@ class App::Syndicator::UI  {
     method fetch_messages {
         $self->_status_text('Fetching messages..');
 
-        for my $msg ($self->db->fetch) {
-            unshift @{$self->message_list->values}, $msg->id;
+        unless (scalar @{$self->message_list->values}) {
+            $self->_populate_message_list($self->db->fetch);
+        }
+        else {
+            for my $msg ($self->db->fetch) {
+                unshift @{$self->message_list->values}, $msg->id;
 
-            $self->message_list->labels->{$msg->id} 
-                = '<underline>'.$msg->title.'</underline>';
+                $self->message_list->labels->{$msg->id} 
+                = '<bold>'.$msg->title.'</bold>';
+            }
         }
 
-        $self->curses->layout;
-
         $self->_update_message_count;
+        $self->curses->layout;
+        $self->switch_focus;
     }
 
     method home {
         $self->_status_text('Help');
-        my $help_text = << 'EOD';
-
-Key bindings
-
-f     - fetch messages
-d     - delete selected messages
-r     - toggle read
-j     - move up
-k     - down down
-/     - search forwards
-?     - search backwards
-space - select or de-select
-tab   - switch focus"
-h     - help (this screen)
-q     - quit
-
-Links
-
-* CPAN   - http://search.cpan.org/~rge/
-* GitHub - http://github.com/robinedwards/App-Syndicator
-
-EOD
         $self->_viewer_text($help_text);
     }
 
@@ -373,5 +377,6 @@ EOD
         
         $self->curses->layout;
     }
+
 }
 

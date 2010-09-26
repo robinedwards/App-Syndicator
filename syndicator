@@ -14,7 +14,7 @@ if (grep { /^-?-init$/ } @ARGV) {
 
     my $config_template = '{
         "sources": [
-        "http://blogs.perl.org/atom.xml"
+            "http://blogs.perl.org/atom.xml"
         ]
     }';
 
