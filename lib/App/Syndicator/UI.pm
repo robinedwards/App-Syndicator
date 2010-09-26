@@ -242,12 +242,12 @@ class App::Syndicator::UI  {
             unshift @{$self->message_list->values}, $msg->id;
 
             $self->message_list->labels->{$msg->id} 
-                = '<underline>'.$msg->title.'</underline>';
+                = '<bold>'.$msg->title.'</bold>';
         }
 
-        $self->curses->layout;
-
         $self->_update_message_count;
+        $self->curses->layout;
+        $self->switch_focus;
     }
 
     method home {
