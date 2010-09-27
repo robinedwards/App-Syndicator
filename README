@@ -24,8 +24,7 @@ To install this module type the following:
 
 BUGS
 
-- backgrounding fetch
-- ui state on first fetch
+- backgrounding fetch?
 - use DBI search for message ordering
 - errors not being shown
 - html to text rendering missing first char of each post
