@@ -8,7 +8,7 @@ role App::Syndicator::Config with MooseX::ConfigFromFile {
 
     method get_config_from_file (ClassName $class: File $file ) {
         try {
-            my $cfg = Config::Any->load_files({files => [$file], use_ext => 0});
+            my $cfg = Config::Any->load_files({files => [$file], use_ext => 1});
             return $cfg->[0]->{$file};
         }
         catch {
