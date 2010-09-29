@@ -131,9 +131,14 @@ class App::Syndicator::DB {
             }
         }
 
-        return sort {
-            $b->published->compare($a->published)
-        } @new_messages;
+        if (wantarray) {
+            return sort {
+                $b->published->compare($a->published)
+            } @new_messages;
+        }
+        else {
+            return scalar @new_messages;
+        }
     } 
 
     method all_messages {
