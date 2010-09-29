@@ -1,7 +1,5 @@
 package App::Syndicator;
 
-our $VERSION = '0.003';
-
 use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
@@ -47,6 +45,8 @@ __END__
 =head1 NAME
 
 App::Syndicator - Curses interface for reading RSS / ATOM feeds.
+
+=head1 VERSION
 
 =head1 USAGE
 
