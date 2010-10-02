@@ -23,6 +23,7 @@ class App::Syndicator with (App::Syndicator::Config,
         isa => UriArray,
         coerce => 1,
         required => 1,
+        traits => ['NoGetopt']
     );
 
     has dbfile => (
