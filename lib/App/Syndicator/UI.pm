@@ -124,7 +124,7 @@ EOD
     method _build_main_window {
         my $main_win = $self->curses->add(
             'main', 'Window',
-            -y => 10,
+            -y => 12,
             -border => 0,
         );
 
@@ -134,7 +134,7 @@ EOD
     method _build_header_window {
         my $header_win = $self->curses->add(
             'header', 'Window',
-            -y => 9,
+            -y => 11,
             -height => 1,
             -bg => 'blue',
             -fg => 'white',
@@ -147,7 +147,7 @@ EOD
         my $list_win = $self->curses->add(
             'list', 'Window',
             -y => 1,
-            -height => 8,
+            -height => 10,
             -border => 0,
         );
 

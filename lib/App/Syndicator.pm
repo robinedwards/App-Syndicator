@@ -54,8 +54,6 @@ __END__
 
 App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
-=head1 VERSION
-
 =head1 USAGE
 
  # first run
@@ -66,6 +64,8 @@ App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
  # run
  $ syndicator 2> errors.log
+
+ $ syndicator --config=config.any --db=sqlite.db
 
 =head2 EXAMPLE CONFIG
 
