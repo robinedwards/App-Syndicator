@@ -254,6 +254,7 @@ EOD
         }
 
         $self->_update_message_count;
+        $self->curses->layout;
     }
 
     method message_toggle_star {
@@ -275,6 +276,7 @@ EOD
         }
 
         $self->_update_message_count;
+        $self->curses->layout;
     }
 
     method fetch_messages {
@@ -384,4 +386,5 @@ EOD
         
         $self->curses->layout;
     }
+
 }
