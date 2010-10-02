@@ -4,10 +4,10 @@ use MooseX::Declare;
 
 class App::Syndicator with (App::Syndicator::Config, 
     MooseX::Getopt::Dashes) {
-    use App::Syndicator::Types qw/File UriArray/;
-    use MooseX::Types::Moose qw/Bool HashRef/;
+    use App::Syndicator::Types qw/File WritableFile UriArray/;
     use App::Syndicator::UI;
     use App::Syndicator::DB;
+    use IO::All;
 
     our $BASE = "$ENV{HOME}/.syndicator";
 
@@ -25,9 +25,16 @@ class App::Syndicator with (App::Syndicator::Config,
         required => 1,
     );
 
+    has dbfile => (
+        is => 'ro',
+        isa => WritableFile,
+        required => 1,
+        default => "$BASE/main.db"
+    );
+
     method run {
         my $db = App::Syndicator::DB->new(
-            dsn => "DBI:SQLite:dbname=$BASE/main.db",
+            dsn => "DBI:SQLite:dbname=".$self->dbfile,
             sources => $self->sources,
         );
 

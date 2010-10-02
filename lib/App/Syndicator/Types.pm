@@ -5,12 +5,14 @@ class App::Syndicator::Types {
     use MooseX::Types::Moose qw/Object ArrayRef Str Int Bool/;
     use MooseX::Types -declare=> [qw/
         Entry_T DateTime_T UriArray Window_T Aggregator_T
-        DB_T Importer_T PositiveInt File TextViewer_T KiokuDB_T
+        DB_T Importer_T PositiveInt File 
+        WritableFile TextViewer_T KiokuDB_T
         Curses_T Output_T ListBox_T MessageBody_T MessageTitle_T
         Message_T
     /];
     use MooseX::Types::URI 'Uri';
     use MooseX::Types::DateTime 'DateTime';
+    use IO::All;
     
     subtype UriArray,
         as ArrayRef[Uri];
@@ -29,6 +31,14 @@ class App::Syndicator::Types {
             -f $_;
         },
         message {"\n\n This '$_' is not a file\n\n" };
+
+    subtype WritableFile,
+        as Str,
+        where {
+            io($_)->touch unless -f $_;
+            -f && -w;
+        },
+        message {"\n\n Couldn't create or write to file '$_'"};
 
     subtype PositiveInt,
         as Int,
