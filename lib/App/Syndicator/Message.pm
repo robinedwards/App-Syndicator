@@ -140,7 +140,12 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
             $self->xml_entry(undef);
         }
     }
+
+    # should really be in a view.
+    method render_title {
+        return ($self->is_read ? '<bold>[NEW] </bold>' : '')
+            . ($self->star ? '<bold>[*] </bold>' : '')
+            . $self->title;
+    }
 }
 
-
-1;

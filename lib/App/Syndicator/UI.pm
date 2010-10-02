@@ -93,6 +93,7 @@ Key bindings
 f     - fetch messages
 d     - delete selected messages
 r     - toggle read
+s     - toggle star
 j     - move up
 k     - down down
 /     - search forwards
@@ -200,6 +201,7 @@ EOD
         $self->set_binding( sub { $self->fetch_messages }, "f");
         $self->set_binding( sub { $self->message_delete }, "d");
         $self->set_binding( sub { $self->message_toggle_read }, "r");
+        $self->set_binding( sub { $self->message_toggle_star }, "s");
         $self->set_binding( sub { $self->home }, "h");
         $self->set_binding( sub { $self->switch_focus }, "\t");
     }
@@ -239,15 +241,34 @@ EOD
 
             if ($msg->is_read) {
                 $self->message_list->labels->{$id}
-                    = $msg->title;
-
+                    = $msg->render_title;
                 $self->db->dec_unread;
             }
             else {
                 $self->message_list->labels->{$id}
-                    = "<bold>".$msg->title."</bold>";
-
+                = $msg->render_title;
                 $self->db->inc_unread;
+            }
+
+            $self->db->store($msg);
+        }
+
+        $self->_update_message_count;
+    }
+
+    method message_toggle_star {
+        for my $id ($self->_selected_messages) {
+            my $msg = $self->db->lookup($id);
+
+            $msg->star(!$msg->star);
+
+            if ($msg->star) {
+                $self->message_list->labels->{$id}
+                    = $msg->render_title;
+            }
+            else {
+                $self->message_list->labels->{$id}
+                    = $msg->render_title;
             }
 
             $self->db->store($msg);
@@ -267,7 +288,7 @@ EOD
                 unshift @{$self->message_list->values}, $msg->id;
 
                 $self->message_list->labels->{$msg->id} 
-                = '<bold>'.$msg->title.'</bold>';
+                    = $msg->render_title;
             }
         }
 
@@ -309,8 +330,7 @@ EOD
 
         $self->message_list->labels(
             { map { 
-                $_->id => 
-                    $_->is_read ? $_->title : '<bold>'.$_->title.'</bold>'
+                $_->id => $_->render_title
                 } @messages 
             }
         );
@@ -326,21 +346,8 @@ EOD
         my $msg = eval { $self->db->lookup($msg_id) };
         return unless defined $msg;
 
-        $self->_message_mark_read($msg)
-            unless $msg->is_read;
         $self->_render_message($msg);
         $self->message_list->focus;
-    }
-
-    method _message_mark_read (Message_T $msg) {
-        $self->db->dec_unread
-            unless $msg->is_read;
-
-        $msg->is_read(1);
-        $self->db->store($msg);
-        
-        $self->_update_message_count;
-        $self->message_list->labels->{$msg->id} = $msg->title;
     }
 
     method _update_message_count {
@@ -377,6 +384,4 @@ EOD
         
         $self->curses->layout;
     }
-
 }
-
