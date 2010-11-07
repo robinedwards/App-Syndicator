@@ -121,6 +121,7 @@ class App::Syndicator::DB {
 
         for my $entry ($self->aggregator->entries) {
             my $msg = eval { App::Syndicator::Message->new($entry) };
+            warn $@ if $@;
             next unless $msg;
             next if eval { $self->lookup($msg->id) };
 

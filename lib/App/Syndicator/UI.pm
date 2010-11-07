@@ -14,6 +14,7 @@ class App::Syndicator::UI  {
                 -color_support => 1,
                 -clear_on_exit => 1,
                 -mouse_support => 0,
+                -compat => 1,
             ) 
         }, 
         handles => [qw/set_binding mainloop schedule_event/]
@@ -99,14 +100,15 @@ k     - down down
 /     - search forwards
 ?     - search backwards
 space - select or de-select
-tab   - switch focus"
+tab   - switch focus
 h     - help (this screen)
 q     - quit
 
 Links
 
-* CPAN   - http://search.cpan.org/~rge/
-* GitHub - http://github.com/robinedwards/App-Syndicator
+* CPAN    - http://search.cpan.org/~rge/
+* GitHub  - http://github.com/robinedwards/App-Syndicator
+* Tweeter - @thefeatheryone
 EOD
 
     method _build_status_window {
@@ -281,19 +283,10 @@ EOD
 
     method fetch_messages {
         $self->_status_text('Fetching messages..');
-
-        unless (scalar @{$self->message_list->values}) {
-            $self->_populate_message_list($self->db->fetch);
-        }
-        else {
-            for my $msg ($self->db->fetch) {
-                unshift @{$self->message_list->values}, $msg->id;
-
-                $self->message_list->labels->{$msg->id} 
-                    = $msg->render_title;
-            }
-        }
-
+        
+        $self->db->fetch;
+        $self->_populate_message_list($self->db->all_messages);
+       
         $self->_update_message_count;
         $self->curses->layout;
         $self->switch_focus;

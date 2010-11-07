@@ -7,7 +7,6 @@ class App::Syndicator with (App::Syndicator::Config,
     use App::Syndicator::Types qw/File WritableFile UriArray/;
     use App::Syndicator::UI;
     use App::Syndicator::DB;
-    use IO::All;
 
     our $BASE = "$ENV{HOME}/.syndicator";
 
@@ -84,9 +83,15 @@ App::Syndicator - Curses interface for reading RSS / ATOM feeds.
 
 XML::Feed::Aggregator
 
+=head1 CONTRIBUTE
+
+http://github.com/robinedwards/App-Syndicator
+
 =head1 AUTHOR
 
-Rob Edwards, E<lt>rge@cpan.orgE<gt>
+Rob Edwards, E<lt>robin.ge@gmail.comE<gt>
+
+Tweeter: @thefeatheryone
 
 =head1 COPYRIGHT AND LICENSE
 

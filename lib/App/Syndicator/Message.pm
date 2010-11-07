@@ -91,7 +91,7 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
     );
 
     method BUILDARGS(ClassName $class: Entry_T $entry) {
-        return $class->next::method({xml_entry=>$entry});
+        return $class->next::method({xml_entry => $entry});
     }
 
     method delete {
@@ -103,15 +103,17 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
 
     method BUILD {
         if (my $entry = $self->xml_entry) {
+            $self->uri($entry->link);
+            $self->base_uri($entry->base) if defined $entry->base;
+
             $self->author($entry->author) 
                 if defined $entry->author;
 
             my $title = $self->html_to_ascii($entry->title);
-            $title =~ s/\n//g;
+            chomp $title;
+            $title =~ s/^\s+//g;
+            $title =~ s/\s+/ /g;
             $self->title($title);
-
-            $self->uri($entry->link);
-            $self->base_uri($entry->base) if defined $entry->base;
 
             $self->published(
                 $entry->modified || $entry->issued || DateTime->now
