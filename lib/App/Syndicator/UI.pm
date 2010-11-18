@@ -14,7 +14,6 @@ class App::Syndicator::UI  {
                 -color_support => 1,
                 -clear_on_exit => 1,
                 -mouse_support => 0,
-                -compat => 1,
             ) 
         }, 
         handles => [qw/set_binding mainloop schedule_event/]
@@ -159,6 +158,8 @@ EOD
     method BUILD {
         my $status_bar = $self->status_window->add(
             'status', 'TextViewer',
+            -bg => 'blue',
+            -fg => 'white',
         );
         $self->status_bar($status_bar);
 
@@ -171,6 +172,8 @@ EOD
 
         my $header_bar = $self->header_window->add(
             'header', 'TextViewer',
+            -bg => 'blue',
+            -fg => 'white',
         );
         $self->header_bar($header_bar);
 
@@ -248,7 +251,7 @@ EOD
             }
             else {
                 $self->message_list->labels->{$id}
-                = $msg->render_title;
+                    = $msg->render_title;
                 $self->db->inc_unread;
             }
 
@@ -289,7 +292,6 @@ EOD
        
         $self->_update_message_count;
         $self->curses->layout;
-        $self->switch_focus;
     }
 
     method home {

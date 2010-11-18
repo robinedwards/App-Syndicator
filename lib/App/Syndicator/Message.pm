@@ -111,7 +111,7 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
 
             my $title = $self->html_to_ascii($entry->title);
             chomp $title;
-            $title =~ s/^\s+//g;
+            $title =~ s/^\s+(.+)$/$1/;
             $title =~ s/\s+/ /g;
             $self->title($title);
 
@@ -145,7 +145,7 @@ class App::Syndicator::Message with App::Syndicator::HtmlToAscii {
 
     # should really be in a view.
     method render_title {
-        return ($self->is_read ? '<bold>[NEW] </bold>' : '')
+        return ($self->is_read ? '' : '<bold>[NEW] </bold>')
             . ($self->star ? '<bold>[*] </bold>' : '')
             . $self->title;
     }

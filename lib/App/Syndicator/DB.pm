@@ -1,12 +1,12 @@
 use MooseX::Declare;
 
-class App::Syndicator::DB {
+class App::Syndicator::DB 
+    with App::Syndicator::FeedReader {
     use KiokuDB;
-    use XML::Feed::Aggregator;
     use DateTime;
     use App::Syndicator::Message;
     use App::Syndicator::Types qw/
-        KiokuDB_T Message_T UriArray Aggregator_T
+        KiokuDB_T Message_T
         /;
     use MooseX::Types::Moose qw/Str Int/;
 
@@ -28,21 +28,6 @@ class App::Syndicator::DB {
         is => 'rw',
         isa => 'Object',
         lazy_build => 1,
-    );
-
-     # list of rss / atom uris
-    has sources => (
-        is => 'ro',
-        isa => UriArray,
-        traits => ['Array'],
-        coerce => 1,
-        required => 1,
-    );
-
-    has aggregator => (
-        is => 'rw',
-        isa => Aggregator_T,
-        handles => [qw/errors/],
     );
 
     has total => (
@@ -107,23 +92,16 @@ class App::Syndicator::DB {
     }
 
     method fetch {
-        $self->aggregator(
-            XML::Feed::Aggregator->new({
-                sources => $self->sources
-            })
-        );
-        $self->aggregator->sort('desc');
-        $self->aggregator->deduplicate;
-        
-        my $n = 0;
+        $self->fetch_feeds;
 
+        my $n = 0;
         my @new_messages;
 
         for my $entry ($self->aggregator->entries) {
-            my $msg = eval { App::Syndicator::Message->new($entry) };
-            warn $@ if $@;
-            next unless $msg;
-            next if eval { $self->lookup($msg->id) };
+            my $msg = App::Syndicator::Message->new($entry); 
+
+            next unless defined $msg;
+            next if $self->lookup($msg->id);
 
             if ($self->directory->store($msg->id => $msg)) {
                 push @new_messages, $msg;
@@ -147,7 +125,8 @@ class App::Syndicator::DB {
             $self->inc_total;
             $self->inc_unread unless $_->is_read;
             $_;
-        } sort {
+        } 
+        sort {
             $b->published->compare($a->published)
         } 
         $self->directory->search(
