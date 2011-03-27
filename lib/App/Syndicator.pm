@@ -1,4 +1,5 @@
 package App::Syndicator;
+# Dist::Zilla: +PodWeaver
 
 use MooseX::Declare;
 
