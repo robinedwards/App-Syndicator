@@ -97,7 +97,7 @@ class App::Syndicator::DB
         my $n = 0;
         my @new_messages;
 
-        for my $entry ($self->aggregator->entries) {
+        for my $entry ($self->aggregator->all_entries) {
             my $msg = App::Syndicator::Message->new($entry); 
 
             next unless defined $msg;
@@ -105,8 +105,6 @@ class App::Syndicator::DB
 
             if ($self->directory->store($msg->id => $msg)) {
                 push @new_messages, $msg;
-                $self->inc_unread;
-                $self->inc_total;
             }
         }
 
@@ -121,6 +119,9 @@ class App::Syndicator::DB
     } 
 
     method all_messages {
+        $self->unread(0);
+        $self->total(0);
+
         my @msg = map { 
             $self->inc_total;
             $self->inc_unread unless $_->is_read;

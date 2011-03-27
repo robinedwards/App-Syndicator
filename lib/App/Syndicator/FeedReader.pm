@@ -10,7 +10,6 @@ role App::Syndicator::FeedReader {
     has sources => (
         is => 'ro',
         isa => UriArray,
-        traits => ['Array'],
         coerce => 1,
         required => 1,
     );
@@ -23,12 +22,12 @@ role App::Syndicator::FeedReader {
 
     method fetch_feeds {
         $self->aggregator(
-            XML::Feed::Aggregator->new({
+            XML::Feed::Aggregator->new(
                 sources => $self->sources
-            })
+            )
         );
 
-        $self->aggregator->sort('desc');
-        $self->aggregator->deduplicate;
+        $self->aggregator->fetch->aggregate
+            ->deduplicate->sort_by_date;
     }
 }
